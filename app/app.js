@@ -1995,7 +1995,7 @@ function aiFmt(t) {
 function aiRender() {
   var b = $('aim'), u = S.sess ? S.sess.user : { name: '' };
   if (!AI.h.length) {
-    b.innerHTML = '<div class="aiwel"><div class="ai-orb big"><i></i><i></i><i></i></div><h3>' + esc(greet()) + ', ' + esc(String(u.name || '').split(' ').slice(-1)[0]) + '</h3><p><b>PEPL Intelligence</b> knows procurement, GST / HSN, letters, reports and site work. Type, or tap the mic and speak.</p><div class="aisug">' + AI_SUG.map(function (s) { return '<button class="chip" data-s="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div><small>AI can make mistakes. Check important figures. It cannot see ERP records.</small></div>';
+    b.innerHTML = '<div class="aiwel"><div class="ai-orb big"><i></i><i></i><i></i></div><h3>' + esc(greet()) + ', ' + esc(String(u.name || '').split(' ').slice(-1)[0]) + '</h3><p><b>PEPL Intelligence</b> knows procurement, GST / HSN, letters, reports and site work. Type, or tap the mic and speak. Attach a quotation, invoice or GST certificate and tap Fill to auto-fill an ERP form.</p><div class="aisug">' + AI_SUG.map(function (s) { return '<button class="chip" data-s="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div><small>AI can make mistakes. Check important figures. It cannot see ERP records.</small></div>';
     b.querySelectorAll('[data-s]').forEach(function (x) { x.onclick = function () { aiSend(x.dataset.s); }; });
   } else {
     b.innerHTML = AI.h.map(function (m, i) { return m.r === 'ai' ? '<div class="aib ai">' + aiFmt(m.t) + (m.src && m.src.length ? '<div class="aisrc"><b>Sources:</b> ' + m.src.map(function (s) { return '<a href="' + esc(s.u) + '" target="_blank" rel="noopener">' + esc(s.t) + '</a>'; }).join('') + '</div>' : '') + '<button class="aicp" data-c="' + i + '">Copy</button></div>' : '<div class="aib me">' + (m.f ? '<span class="aifc">&#128206; ' + esc(m.f) + '</span>' : '') + esc(m.t).replace(/\n/g, '<br>') + '</div>'; }).join('') + (AI.busy ? '<div class="aib ai typing"><i></i><i></i><i></i><span class="aity" id="aiTy">' + esc(AI_STEPS[AI.step % AI_STEPS.length]) + '</span></div>' : '');
@@ -2019,7 +2019,31 @@ $('aiX').onclick = closeAI; $('aiGo').onclick = function () { aiSend(); }; $('ai
 $('aiNew').onclick = function () { AI.h = []; AI.file = null; aiFileChip(); aiSave(); aiRender(); };
 function aiWebUi() { $('aiWeb').classList.toggle('on', AI.web); }
 $('aiWeb').onclick = function () { AI.web = !AI.web; store.set('pe_aiweb', AI.web ? '1' : '0'); aiWebUi(); toast(AI.web ? 'Web search ON - answers use Google Search.' : 'Web search OFF.'); }; aiWebUi();
-function aiFileChip() { var c = $('aiFileChip'); if (!c) return; c.innerHTML = AI.file ? '<span class="chip on aifile">' + (AI.file.thumb ? '<img src="' + AI.file.thumb + '" alt="">' : '&#128196; ') + esc(AI.file.name) + ' <b data-x="1">&#10005;</b></span>' : ''; var x = c.querySelector('[data-x]'); if (x) x.onclick = function () { AI.file = null; aiFileChip(); }; }
+var AI_FILL = [['vendor', 'Vendor', 'vendors'], ['po', 'Purchase Order', 'po'], ['pr', 'Indent', 'pr'], ['quotes', 'Comparison', 'quotes'], ['bill', 'Vendor Bill', 'bills']];
+function aiFileChip() {
+  var c = $('aiFileChip'); if (!c) return;
+  c.innerHTML = AI.file ? '<span class="chip on aifile">' + (AI.file.thumb ? '<img src="' + AI.file.thumb + '" alt="">' : '&#128196; ') + esc(AI.file.name) + ' <b data-x="1">&#10005;</b></span><div class="aisug" style="justify-content:flex-start;margin-top:8px"><small style="width:100%;opacity:.7">Auto-fill an ERP form from this file:</small>' + AI_FILL.map(function (f) { return '<button class="chip" data-fill="' + f[0] + '">Fill ' + esc(f[1]) + '</button>'; }).join('') + '</div>' : '';
+  var x = c.querySelector('[data-x]'); if (x) x.onclick = function () { AI.file = null; aiFileChip(); };
+  c.querySelectorAll('[data-fill]').forEach(function (b) { b.onclick = function () { aiFill(b.dataset.fill); }; });
+}
+function aiFill(kind) {
+  var fl = AI.file; if (!fl || AI.busy) return;
+  var def = AI_FILL.filter(function (f) { return f[0] === kind; })[0]; if (!def) return;
+  var hist = AI.h.length;
+  AI.h.push({ r: 'me', t: 'Fill the ' + def[1] + ' form from this file', f: fl.name }); AI.busy = true; AI.step = 0; clearInterval(AI.tm);
+  AI.tm = setInterval(function () { if (!AI.busy) { clearInterval(AI.tm); return; } AI.step++; var s = $('aiTy'); if (s) s.textContent = AI_STEPS[AI.step % AI_STEPS.length]; }, 1400); aiRender();
+  call('aiExtract', S.token, kind, { name: fl.name, mime: fl.mime, b64: fl.b64 }).then(function (r) {
+    AI.busy = false;
+    var fg = r.flags || [], block = fg.some(function (x) { return /^(ALREADY IN|DUPLICATE)/.test(x); });
+    var t = 'I read **' + (r.file || fl.name) + '**.' + (block ? ' I did not open the form.' : ' The ' + def[1] + ' form is open with the details filled in. Please check every field, then save.');
+    t += fg.length ? '\n\n**Please check:**\n' + fg.map(function (x) { return '- ' + x; }).join('\n') : '\n\nNo problems found. Still check the amounts, dates and names against the document.';
+    AI.h.push({ r: 'ai', t: t }); aiSave(); aiRender();
+    if (block) return;
+    var pre = JSON.parse(JSON.stringify(r.data || {})); if (r.lines && r.lines.length) pre.lines = r.lines;
+    closeAI(); openForm(def[2], null, pre);
+    toast(fg.length ? 'Form filled. ' + fg.length + ' point(s) to check - see the AI chat.' : 'Form filled. Please check and save.');
+  }).catch(function (e) { AI.busy = false; AI.h.length = hist; aiRender(); fail(e); });
+}
 function aiPrep(f) {
   return new Promise(function (res, rej) {
     if (f.size > 15 * 1024 * 1024) return rej(new Error('File is too big (max 15 MB photo / 8 MB PDF).'));
