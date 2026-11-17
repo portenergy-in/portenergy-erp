@@ -1999,6 +1999,7 @@ function aiRender() {
     b.querySelectorAll('[data-s]').forEach(function (x) { x.onclick = function () { aiSend(x.dataset.s); }; });
   } else {
     b.innerHTML = AI.h.map(function (m, i) { return m.r === 'ai' ? '<div class="aib ai">' + aiFmt(m.t) + (m.src && m.src.length ? '<div class="aisrc"><b>Sources:</b> ' + m.src.map(function (s) { return '<a href="' + esc(s.u) + '" target="_blank" rel="noopener">' + esc(s.t) + '</a>'; }).join('') + '</div>' : '') + '<button class="aicp" data-c="' + i + '">Copy</button></div>' : '<div class="aib me">' + (m.f ? '<span class="aifc">&#128206; ' + esc(m.f) + '</span>' : '') + esc(m.t).replace(/\n/g, '<br>') + '</div>'; }).join('') + (AI.busy ? '<div class="aib ai typing"><i></i><i></i><i></i><span class="aity" id="aiTy">' + esc(AI_STEPS[AI.step % AI_STEPS.length]) + '</span></div>' : '');
+    if (AI.last && !AI.busy) { b.insertAdjacentHTML('beforeend', '<div class="aib ai"><div class="aisug" style="justify-content:flex-start"><small style="width:100%;opacity:.7">Auto-fill an ERP form from <b>' + esc(AI.last.name) + '</b>:</small>' + AI_FILL.map(function (f) { return '<button class="chip" data-fill="' + f[0] + '">Fill ' + esc(f[1]) + '</button>'; }).join('') + '</div></div>'); b.querySelectorAll('[data-fill]').forEach(function (x) { x.onclick = function () { aiFill(x.dataset.fill); }; }); }
     b.querySelectorAll('[data-c]').forEach(function (x) { x.onclick = function () { var t = AI.h[+x.dataset.c].t; try { navigator.clipboard.writeText(t).then(function () { toast('Copied.'); }, function () { toast('Long-press the text to copy.', true); }); } catch (e) { toast('Long-press the text to copy.', true); } }; });
   }
   b.scrollTop = b.scrollHeight;
@@ -2008,7 +2009,7 @@ function aiSend(q) {
   q = String(q || $('aiIn').value).trim(); if ((!q && !AI.file) || AI.busy) return;
   var fl = AI.file, opt = { web: AI.web, file: fl ? { name: fl.name, mime: fl.mime, b64: fl.b64 } : null };
   var hist = AI.h.slice(-12);
-  AI.h.push({ r: 'me', t: q || 'Read this file', f: fl ? fl.name : '' }); AI.file = null; aiFileChip(); AI.busy = true; AI.step = 0; clearInterval(AI.tm); AI.tm = setInterval(function () { if (!AI.busy) { clearInterval(AI.tm); return; } AI.step++; var s = $('aiTy'); if (s) { s.classList.remove('in'); void s.offsetWidth; s.textContent = AI_STEPS[AI.step % AI_STEPS.length]; s.classList.add('in'); } }, 1400); $('aiIn').value = ''; aiGrow(); aiRender();
+  AI.h.push({ r: 'me', t: q || 'Read this file', f: fl ? fl.name : '' }); if (fl) AI.last = fl; AI.file = null; aiFileChip(); AI.busy = true; AI.step = 0; clearInterval(AI.tm); AI.tm = setInterval(function () { if (!AI.busy) { clearInterval(AI.tm); return; } AI.step++; var s = $('aiTy'); if (s) { s.classList.remove('in'); void s.offsetWidth; s.textContent = AI_STEPS[AI.step % AI_STEPS.length]; s.classList.add('in'); } }, 1400); $('aiIn').value = ''; aiGrow(); aiRender();
   call('aiChat', S.token, hist, q, opt).then(function (r) { AI.busy = false; AI.h.push({ r: 'ai', t: r.text, src: r.src || [] }); aiSave(); aiRender(); })
     .catch(function (e) { AI.busy = false; AI.h.pop(); $('aiIn').value = q; AI.file = fl; aiFileChip(); aiRender(); fail(e); });
 }
@@ -2016,7 +2017,7 @@ function aiGrow() { var t = $('aiIn'); t.style.height = 'auto'; t.style.height =
 function openAI() { closeSide(); $('menu').classList.remove('open'); $('aip').classList.add('open'); aiRender(); setTimeout(function () { if (window.innerWidth > 760) $('aiIn').focus(); }, 200); }
 function closeAI() { $('aip').classList.remove('open'); }
 $('aiX').onclick = closeAI; $('aiGo').onclick = function () { aiSend(); }; $('aiBtn').onclick = function () { openAI(); };
-$('aiNew').onclick = function () { AI.h = []; AI.file = null; aiFileChip(); aiSave(); aiRender(); };
+$('aiNew').onclick = function () { AI.h = []; AI.file = null; AI.last = null; aiFileChip(); aiSave(); aiRender(); };
 function aiWebUi() { $('aiWeb').classList.toggle('on', AI.web); }
 $('aiWeb').onclick = function () { AI.web = !AI.web; store.set('pe_aiweb', AI.web ? '1' : '0'); aiWebUi(); toast(AI.web ? 'Web search ON - answers use Google Search.' : 'Web search OFF.'); }; aiWebUi();
 var AI_FILL = [['vendor', 'Vendor', 'vendors'], ['po', 'Purchase Order', 'po'], ['pr', 'Indent', 'pr'], ['quotes', 'Comparison', 'quotes'], ['bill', 'Vendor Bill', 'bills']];
@@ -2027,7 +2028,7 @@ function aiFileChip() {
   c.querySelectorAll('[data-fill]').forEach(function (b) { b.onclick = function () { aiFill(b.dataset.fill); }; });
 }
 function aiFill(kind) {
-  var fl = AI.file; if (!fl || AI.busy) return;
+  var fl = AI.file || AI.last; if (!fl || AI.busy) return;
   var def = AI_FILL.filter(function (f) { return f[0] === kind; })[0]; if (!def) return;
   var hist = AI.h.length;
   AI.h.push({ r: 'me', t: 'Fill the ' + def[1] + ' form from this file', f: fl.name }); AI.busy = true; AI.step = 0; clearInterval(AI.tm);
