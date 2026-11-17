@@ -4,6 +4,12 @@
 (function () {
   'use strict';
   var RELEASES = [
+    { id: '2026-11-17c', date: '17 Nov 2026', title: 'PEPL Intelligence now works for you', items: [
+      { i: '🤖', t: 'AI operates the ERP', d: 'Tell the AI what you need. It opens the form and fills it while you watch.' },
+      { i: '📎', t: 'Attach and say', d: 'Attach a quotation, invoice or GST certificate and say what to do, for example: fill this vendor form.' },
+      { i: '🔍', t: 'Asks your ERP', d: 'Ask for pending POs, a vendor or a bill status. The AI searches the records you can see.' },
+      { i: '✅', t: 'You stay in control', d: 'AI never saves. Check the form, then press Save.' }
+    ] },
     { id: '2026-11-17b', date: '17 Nov 2026', title: 'New: AI that fills your forms', items: [
       { i: '🤖', t: 'Attach and auto-fill', d: 'In PEPL Intelligence, attach a quotation, invoice, GST certificate or visiting card and tap Fill. The ERP form opens with the details already typed in.' },
       { i: '✅', t: 'You check, then save', d: 'AI never saves anything. Check every field, then tap Save.' },
