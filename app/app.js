@@ -1995,7 +1995,7 @@ function aiFmt(t) {
 function aiRender() {
   var b = $('aim'), u = S.sess ? S.sess.user : { name: '' };
   if (!AI.h.length) {
-    b.innerHTML = '<div class="aiwel"><div class="ai-orb big"><i></i><i></i><i></i></div><h3>' + esc(greet()) + ', ' + esc(String(u.name || '').split(' ').slice(-1)[0]) + '</h3><p><b>PEPL Intelligence</b> knows procurement, GST / HSN, letters, reports and site work. Type, or tap the mic and speak. Attach a quotation, invoice or GST certificate and tap Fill to auto-fill an ERP form.</p><div class="aisug">' + AI_SUG.map(function (s) { return '<button class="chip" data-s="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div><small>AI can make mistakes. Check important figures. It cannot see ERP records.</small></div>';
+    b.innerHTML = '<div class="aiwel"><div class="ai-orb big"><i></i><i></i><i></i></div><h3>' + esc(greet()) + ', ' + esc(String(u.name || '').split(' ').slice(-1)[0]) + '</h3><p><b>PEPL Intelligence</b> knows procurement, GST / HSN, letters, reports and site work. Type, or tap the mic and speak. Attach a quotation or invoice and tell me what to do, for example: fill this vendor form. I can also search your ERP records.</p><div class="aisug">' + AI_SUG.map(function (s) { return '<button class="chip" data-s="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div><small>AI can make mistakes. Check important figures. It cannot see ERP records.</small></div>';
     b.querySelectorAll('[data-s]').forEach(function (x) { x.onclick = function () { aiSend(x.dataset.s); }; });
   } else {
     b.innerHTML = AI.h.map(function (m, i) { return m.r === 'ai' ? '<div class="aib ai">' + aiFmt(m.t) + (m.src && m.src.length ? '<div class="aisrc"><b>Sources:</b> ' + m.src.map(function (s) { return '<a href="' + esc(s.u) + '" target="_blank" rel="noopener">' + esc(s.t) + '</a>'; }).join('') + '</div>' : '') + '<button class="aicp" data-c="' + i + '">Copy</button></div>' : '<div class="aib me">' + (m.f ? '<span class="aifc">&#128206; ' + esc(m.f) + '</span>' : '') + esc(m.t).replace(/\n/g, '<br>') + '</div>'; }).join('') + (AI.busy ? '<div class="aib ai typing"><i></i><i></i><i></i><span class="aity" id="aiTy">' + esc(AI_STEPS[AI.step % AI_STEPS.length]) + '</span></div>' : '');
@@ -2007,6 +2007,7 @@ function aiRender() {
 function aiSave() { try { store.set('pe_ai', JSON.stringify(AI.h.slice(-30))); } catch (e) { } }
 function aiSend(q) {
   q = String(q || $('aiIn').value).trim(); if ((!q && !AI.file) || AI.busy) return;
+  if (!AI.web) return aiAgentSend(q);
   var fl = AI.file, opt = { web: AI.web, file: fl ? { name: fl.name, mime: fl.mime, b64: fl.b64 } : null };
   var hist = AI.h.slice(-12);
   AI.h.push({ r: 'me', t: q || 'Read this file', f: fl ? fl.name : '' }); if (fl) AI.last = fl; AI.file = null; aiFileChip(); AI.busy = true; AI.step = 0; clearInterval(AI.tm); AI.tm = setInterval(function () { if (!AI.busy) { clearInterval(AI.tm); return; } AI.step++; var s = $('aiTy'); if (s) { s.classList.remove('in'); void s.offsetWidth; s.textContent = AI_STEPS[AI.step % AI_STEPS.length]; s.classList.add('in'); } }, 1400); $('aiIn').value = ''; aiGrow(); aiRender();
@@ -2065,6 +2066,103 @@ $('aiFile').onchange = function () { var f = this.files && this.files[0]; this.v
 $('aiIn').addEventListener('input', aiGrow);
 $('aiIn').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 760) { e.preventDefault(); aiSend(); } });
 $('bnav').querySelector('[data-v="ai"]').onclick = function () { openAI(); };
+/* ---------------- AI agent: the AI operates the ERP (Gemini tool calling) ---------------- */
+(function () { var s = document.createElement('style'); s.textContent = '#agBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:99999;width:min(560px,94vw);background:#0F1B4C;color:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.35);padding:12px 14px;font-size:13.5px;display:none}#agBar.on{display:block}#agBar .agh{display:flex;align-items:center;gap:8px;font-weight:700}#agBar .agd{flex:none;width:9px;height:9px;border-radius:50%;background:#FF2D95;animation:agp 1s infinite}#agBar.done .agd{animation:none;background:#22C55E}#agBar .ags{margin-top:6px;opacity:.92;max-height:130px;overflow:auto}#agBar .ags div{padding:1px 0}#agBar button{margin-left:auto;background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:10px;padding:5px 12px;font-weight:600;cursor:pointer}@keyframes agp{50%{opacity:.25}}'; document.head.appendChild(s); })();
+var AG = { stop: false, steps: [], opened: false };
+function agBar(title, done) {
+  var b = $('agBar'); if (!b) { b = document.createElement('div'); b.id = 'agBar'; document.body.appendChild(b); }
+  b.className = (AG.opened ? 'on' : '') + (done ? ' done' : '');
+  b.innerHTML = '<div class="agh"><span class="agd"></span><span>' + esc(title) + '</span><button id="agX">' + (done ? 'Close' : 'Stop') + '</button></div><div class="ags">' + AG.steps.slice(-6).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + '</div>';
+  $('agX').onclick = function () { if (done) b.className = ''; else AG.stop = true; };
+}
+function agStep(label) { AG.steps.push(label); var s = $('aiTy'); if (s) s.textContent = label; if (AG.opened) agBar('PEPL Intelligence is working...'); }
+function agWait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function agParse(s, d) { if (s && typeof s === 'object') return s; try { var v = JSON.parse(s); return v == null ? d : v; } catch (e) { return d; } }
+function agFld(k) { return F && F.e.fields.filter(function (f) { return f.k === k && f.t !== 'auto' && f.t !== 'hidden'; })[0]; }
+function agAddLine(ln) {
+  if (!F || !F.lines) return false;
+  var o = Object.assign(blankLine(F.e), ln || {});
+  var blank = F.lines.length === 1 && F.e.lines.cols.every(function (c) { var v = F.lines[0][c.k]; return v === '' || v == null || v === c.def || v === 0; });
+  if (blank) F.lines[0] = o; else F.lines.push(o);
+  renderLines(); calcPreview(); return true;
+}
+function agTool(name, a) {
+  a = a || {}; var fl = AI.file || AI.last;
+  if (name === 'read_file') {
+    if (!fl) return Promise.resolve({ error: 'No file is attached. Ask the user to attach one.' });
+    agStep('Reading ' + fl.name + '...');
+    return call('aiExtract', S.token, a.kind, { name: fl.name, mime: fl.mime, b64: fl.b64 }).then(function (r) { return { file: r.file, vendorInMaster: r.vendor, data: r.data, lines: r.lines, flags: r.flags }; });
+  }
+  if (name === 'search_records') {
+    var k = a.entity, e0 = ent(k); if (!e0) return Promise.resolve({ error: 'No access to ' + k });
+    agStep('Searching ' + e0.title + '...');
+    var ld = S.cache[k] ? Promise.resolve(S.cache[k]) : call('listRecords', S.token, k).then(function (r) { S.cache[k] = r.rows; S.total[k] = r.total; return r.rows; });
+    return ld.then(function (rows) {
+      var q = String(a.query || '').toLowerCase().trim(), lim = Math.min(Number(a.limit) || 10, 15);
+      var hit = (rows || []).filter(function (x) { return !q || JSON.stringify(x).toLowerCase().indexOf(q) > -1; });
+      return { matches: hit.length, rows: hit.slice(0, lim).map(function (x) { var o = {}, n = 0; Object.keys(x).forEach(function (f) { var v = x[f]; if (n < 10 && v !== '' && v != null && typeof v !== 'object' && String(v).length < 80) { o[f] = v; n++; } }); return o; }) };
+    });
+  }
+  if (name === 'open_form') {
+    var e = ent(a.entity); if (!e) return Promise.resolve({ error: 'No access to ' + a.entity });
+    var vals = agParse(a.values_json, {}), lines = agParse(a.lines_json, []);
+    var fk = {}; e.fields.forEach(function (f) { if (f.t !== 'auto' && f.t !== 'hidden') fk[f.k] = f; });
+    var keys = Object.keys(vals).filter(function (k) { return fk[k] && vals[k] !== '' && vals[k] != null; });
+    var skipped = Object.keys(vals).filter(function (k) { return keys.indexOf(k) < 0; });
+    var pre = {}; keys.forEach(function (k) { pre[k] = vals[k]; });
+    if (e.lines && Array.isArray(lines) && lines.length) pre.lines = lines.map(function (ln) { return Object.assign(blankLine(e), ln); });
+    AG.opened = true; closeAI(); agStep('Opening ' + e.single + ' form...'); agBar('PEPL Intelligence is working...');
+    return agWait(300).then(function () { openForm(a.entity, null, pre); return agWait(600); }).then(function () {
+      var p = Promise.resolve();
+      keys.forEach(function (k) { p = p.then(function () { if (AG.stop || !F || F.key !== a.entity) return; agStep('Filling ' + (fk[k].l || k) + '...'); setField(k, vals[k]); try { onFieldChange(k); } catch (x) { } return agWait(170); }); });
+      if (pre.lines) p = p.then(function () { agStep('Added ' + pre.lines.length + ' item line(s).'); return agWait(300); });
+      return p.then(function () { return { ok: true, filled: keys, skippedUnknownKeys: skipped, lines: pre.lines ? pre.lines.length : 0, fieldKeys: Object.keys(fk).slice(0, 70), lineKeys: e.lines ? e.lines.cols.map(function (c) { return c.k; }) : [] }; });
+    });
+  }
+  if (name === 'set_field') {
+    if (!F) return Promise.resolve({ error: 'No form is open.' });
+    var f = agFld(a.key); if (!f) return Promise.resolve({ error: 'Unknown field ' + a.key, fieldKeys: F.e.fields.filter(function (x) { return x.t !== 'auto' && x.t !== 'hidden'; }).map(function (x) { return x.k; }) });
+    agStep('Filling ' + (f.l || a.key) + '...'); setField(a.key, a.value); try { onFieldChange(a.key); } catch (x) { }
+    return agWait(150).then(function () { return { ok: true }; });
+  }
+  if (name === 'add_line') {
+    if (!F || !F.lines) return Promise.resolve({ error: 'The open form has no item lines.' });
+    agStep('Adding an item line...'); agAddLine(agParse(a.line_json, {}));
+    return agWait(200).then(function () { return { ok: true, lines: F.lines.length }; });
+  }
+  return Promise.resolve({ error: 'Unknown tool ' + name });
+}
+function aiAgentSend(q) {
+  var fl = AI.file; if (fl) AI.last = fl; AI.file = null; aiFileChip();
+  var hist = AI.h.slice(-8);
+  AI.h.push({ r: 'me', t: q || 'Read this file and fill the right ERP form', f: fl ? fl.name : '' });
+  AI.busy = true; AI.step = 0; AG.stop = false; AG.steps = []; AG.opened = false; clearInterval(AI.tm);
+  $('aiIn').value = ''; aiGrow(); aiRender(); agStep('Understanding your request...');
+  var contents = hist.map(function (m) { return { role: m.r === 'ai' ? 'model' : 'user', parts: [{ text: String(m.t || '').slice(0, 4000) }] }; });
+  while (contents.length && contents[0].role === 'model') contents.shift();
+  var uq = (q || 'Read the attached file and fill the right ERP form.') + (fl ? '\n[Attached file: ' + fl.name + ' (' + fl.mime + '). Use read_file to read it.]' : (AI.last ? '\n[Earlier attached file still available: ' + AI.last.name + '. Use read_file if needed.]' : ''));
+  contents.push({ role: 'user', parts: [{ text: uq }] });
+  var n = 0;
+  function loop() {
+    if (AG.stop) return Promise.resolve('Stopped. The form is open as it is now.');
+    if (n++ >= 10) return Promise.resolve('I stopped after too many steps. Please check the form.');
+    return call('aiAgent', S.token, contents, n === 1).then(function (r) {
+      if (r.content) contents.push(r.content);
+      if (!r.calls || !r.calls.length) return r.text || 'Done.';
+      var parts = [], p = Promise.resolve();
+      r.calls.forEach(function (c) { p = p.then(function () { return agTool(c.name, c.args).catch(function (e) { return { error: e.message || String(e) }; }).then(function (res) { parts.push({ functionResponse: { name: c.name, response: { result: res } } }); }); }); });
+      return p.then(function () { contents.push({ role: 'user', parts: parts }); return loop(); });
+    });
+  }
+  loop().then(function (txt) {
+    AI.busy = false; AI.h.push({ r: 'ai', t: txt }); aiSave(); aiRender();
+    if (AG.opened) { AG.steps.push(txt); agBar('Done. Check the form, then press Save.', true); }
+  }).catch(function (e) {
+    AI.busy = false; AI.h.pop(); $('aiIn').value = q; if (fl) AI.file = fl; aiFileChip(); aiRender();
+    if (AG.opened) agBar('Stopped: ' + (e.message || e), true);
+    fail(e);
+  });
+}
 /* ---------------- top clock with time quotes ---------------- */
 var TQ = ['Time is gold.', 'Don\'t waste time - focus on the goal.', 'Every minute counts.', 'Do it now, not later.', 'Lost time never comes back.', 'Use time wisely, win the day.', 'On time, every time.', 'Deadlines are promises - keep them.', 'Plan your hour, own your day.', 'Focus. Finish. Follow up.', 'Time well spent is profit earned.', 'Start now, improve as you go.', 'Time waits for no one.', 'Today\'s work, today.', 'Busy is not the same as productive.', 'One task at a time, done well.'];
 var CK = { m: -1, q: -1 };
