@@ -4,6 +4,12 @@
 (function () {
   'use strict';
   var RELEASES = [
+    { id: '2026-11-17b', date: '17 Nov 2026', title: 'New: AI that fills your forms', items: [
+      { i: '🤖', t: 'Attach and auto-fill', d: 'In PEPL Intelligence, attach a quotation, invoice, GST certificate or visiting card and tap Fill. The ERP form opens with the details already typed in.' },
+      { i: '✅', t: 'You check, then save', d: 'AI never saves anything. Check every field, then tap Save.' },
+      { i: '🔍', t: 'Smart checks', d: 'It warns about a wrong GSTIN, a PAN mismatch, a vendor already in the master, a duplicate invoice and wrong GST type.' },
+      { i: '📚', t: 'Smarter answers', d: 'The AI now knows the Port Energy ERP flow, procurement, GST / TDS, payroll, tenders and letters.' }
+    ] },
     { id: '2026-11-17', date: '17 Nov 2026', title: 'What\'s new in Procurement', items: [
       { i: '📝', t: 'Purchase Indent', d: 'Purchase Request is now called Purchase Indent. Raise your indent in the same easy way.' },
       { i: '✅', t: 'MD approval only', d: 'Vendor, Purchase Indent and PO are now approved by the MD only. No other approver is needed.' },
