@@ -4,6 +4,14 @@
 (function () {
   'use strict';
   var RELEASES = [
+    { id: '2026-11-17', date: '17 Nov 2026', title: 'What\'s new in Procurement', items: [
+      { i: '📝', t: 'Purchase Indent', d: 'Purchase Request is now called Purchase Indent. Raise your indent in the same easy way.' },
+      { i: '✅', t: 'MD approval only', d: 'Vendor, Purchase Indent and PO are now approved by the MD only. No other approver is needed.' },
+      { i: '🔢', t: 'Automatic codes', d: 'Vendor code and Item code are now 6-digit numbers given by the system. The vendor code comes when the MD approves.' },
+      { i: '🏢', t: 'Simpler vendor form', d: 'No OTP now. GSTIN and PAN are checked automatically, so wrong entries are caught at once.' },
+      { i: '📋', t: 'Clear approval table', d: 'The approval channel is now a simple table: name, role, status, date and time.' },
+      { i: '📦', t: 'Post GRN (MIGO)', d: 'Receiving goods is now shown as Post GRN (MIGO).' }
+    ] },
     { id: '2026-11-16', date: '16 Nov 2026', title: 'What\'s new in Port Energy ERP', items: [
       { i: '🔔', t: 'Notifications with sound', d: 'Approvals, status changes and team chat now alert you on phone, web and laptop, with sound. Tap Allow when asked, once.' },
       { i: '🎂', t: 'Birthday and festival wishes', d: 'The sign-in page wishes colleagues on their birthday and on festivals like Pongal and Diwali. Please add your date of birth when asked, one time only.' },
