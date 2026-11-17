@@ -2086,6 +2086,22 @@ function agAddLine(ln) {
   if (blank) F.lines[0] = o; else F.lines.push(o);
   renderLines(); calcPreview(); return true;
 }
+function agContext() {
+  var c = { page: S.route ? S.route.v + (S.route.k ? ':' + S.route.k : '') : '', user: S.sess && S.sess.user ? S.sess.user.name : '' };
+  try {
+    if (S.route && S.route.v === 'list' && S.cache[S.route.k]) {
+      var rows = S.cache[S.route.k]; c.listTotal = rows.length;
+      c.listFirstRows = rows.slice(0, 8).map(function (x) { var o = {}, n = 0; Object.keys(x).forEach(function (f) { var v = x[f]; if (n < 7 && v !== '' && v != null && typeof v !== 'object' && String(v).length < 50) { o[f] = v; n++; } }); return o; });
+    }
+    if (S.openRec && !F && $('drawer').classList.contains('open')) c.openRecord = { entity: S.openRec.key, id: S.openRec.id };
+    if (F) {
+      var vals = {}, empty = [], keys = [];
+      F.e.fields.forEach(function (f) { if (f.t === 'auto' || f.t === 'hidden') return; keys.push(f.k + '=' + (f.l || f.k)); var v = F.rec[f.k]; if (v === '' || v == null || (Array.isArray(v) && !v.length)) { if (f.req) empty.push(f.k); } else if (typeof v !== 'object') vals[f.k] = String(v).slice(0, 80); });
+      c.form = { entity: F.key, isNew: F.isNew, filled: vals, emptyRequired: empty, fieldKeys: keys.slice(0, 70), lines: F.lines ? F.lines.length : undefined, lineKeys: F.e.lines ? F.e.lines.cols.map(function (x) { return x.k; }) : undefined };
+    }
+  } catch (x) { }
+  return c;
+}
 function agTool(name, a) {
   a = a || {}; var fl = AI.file || AI.last;
   if (name === 'read_file') {
@@ -2130,6 +2146,27 @@ function agTool(name, a) {
     agStep('Adding an item line...'); agAddLine(agParse(a.line_json, {}));
     return agWait(200).then(function () { return { ok: true, lines: F.lines.length }; });
   }
+  if (name === 'read_screen') return Promise.resolve(agContext());
+  if (name === 'go_to') {
+    var sc = String(a.screen || '').trim(), kk = sc.toLowerCase(), views = ['home', 'inbox', 'ageing', 'org', 'health'], tgt = null;
+    if (ent(sc)) tgt = { v: 'list', k: sc }; else if (views.indexOf(kk) > -1) tgt = { v: kk };
+    if (!tgt) { var mm = (S.sess.entities || []).filter(function (x) { return String(x.title).toLowerCase() === kk || String(x.single).toLowerCase() === kk; })[0]; if (mm) tgt = { v: 'list', k: mm.key }; }
+    if (!tgt) return Promise.resolve({ error: 'Unknown screen ' + sc, available: views.concat((S.sess.entities || []).map(function (x) { return x.key + ' (' + x.title + ')'; })).slice(0, 60) });
+    AG.opened = true; closeAI(); agStep('Opening ' + sc + '...'); agBar('PEPL Intelligence is working...'); go(tgt);
+    return agWait(1600).then(agContext);
+  }
+  if (name === 'open_record') {
+    var k2 = a.entity, e2 = ent(k2); if (!e2) return Promise.resolve({ error: 'No access to ' + k2 });
+    var q2 = String(a.id || '').toLowerCase().trim();
+    var ld2 = S.cache[k2] ? Promise.resolve(S.cache[k2]) : call('listRecords', S.token, k2).then(function (r) { S.cache[k2] = r.rows; S.total[k2] = r.total; return r.rows; });
+    return ld2.then(function (rows) {
+      rows = rows || [];
+      var rec = rows.filter(function (x) { return String(x.id).toLowerCase() === q2 || String(x.docNo || '').toLowerCase() === q2 || String(x.name || '').toLowerCase() === q2; })[0] || rows.filter(function (x) { return JSON.stringify(x).toLowerCase().indexOf(q2) > -1; })[0];
+      if (!rec) return { error: 'No ' + e2.single + ' found for ' + a.id };
+      AG.opened = true; closeAI(); agStep('Opening ' + rec.id + '...'); agBar('PEPL Intelligence is working...'); openDetail(k2, rec.id);
+      return agWait(1200).then(function () { return { ok: true, id: rec.id }; });
+    });
+  }
   return Promise.resolve({ error: 'Unknown tool ' + name });
 }
 function aiAgentSend(q) {
@@ -2140,7 +2177,7 @@ function aiAgentSend(q) {
   $('aiIn').value = ''; aiGrow(); aiRender(); agStep('Understanding your request...');
   var contents = hist.map(function (m) { return { role: m.r === 'ai' ? 'model' : 'user', parts: [{ text: String(m.t || '').slice(0, 4000) }] }; });
   while (contents.length && contents[0].role === 'model') contents.shift();
-  var uq = (q || 'Read the attached file and fill the right ERP form.') + (fl ? '\n[Attached file: ' + fl.name + ' (' + fl.mime + '). Use read_file to read it.]' : (AI.last ? '\n[Earlier attached file still available: ' + AI.last.name + '. Use read_file if needed.]' : ''));
+  var uq = (q || 'Read the attached file and fill the right ERP form.') + '\n[SCREEN: ' + JSON.stringify(agContext()).slice(0, 6000) + ']' + (fl ? '\n[Attached file: ' + fl.name + ' (' + fl.mime + '). Use read_file to read it.]' : (AI.last ? '\n[Earlier attached file still available: ' + AI.last.name + '. Use read_file if needed.]' : ''));
   contents.push({ role: 'user', parts: [{ text: uq }] });
   var n = 0;
   function loop() {
