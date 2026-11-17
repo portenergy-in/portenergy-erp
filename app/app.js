@@ -24,7 +24,7 @@ function today() { return S.sess ? S.sess.today : new Date().toISOString().slice
 function debounce(fn, ms) { var t; return function () { var a = arguments, s = this; clearTimeout(t); t = setTimeout(function () { fn.apply(s, a); }, ms); }; }
 var MONEY_AUTO = ['subtotal', 'gstAmount', 'total', 'net', 'paid', 'balance', 'received', 'amount', 'gstAmt', 'lastRate', 'tot1', 'tot2', 'tot3', 'tot4', 'l1Total', 'saving'];
 var PCT_AUTO = ['receivedPct'];
-var TCODE = { po: 'ME23N', pr: 'ME53N', quotes: 'ME49', grn: 'MB51', bills: 'MIR4', payments: 'F-53', vendors: 'XK03', items: 'MM03', clientbills: 'FB70', ledger: 'FBL1N', ageing: 'S_ALR', org: 'ORG' };
+var TCODE = { po: 'ME23N', pr: 'ME53N', quotes: 'ME49', grn: 'MIGO', bills: 'MIR4', payments: 'F-53', vendors: 'XK03', items: 'MM03', clientbills: 'FB70', ledger: 'FBL1N', ageing: 'S_ALR', org: 'ORG' };
 
 /* ---------------- icons ---------------- */
 var IC = {
@@ -813,16 +813,21 @@ function withPill(who, d) {
 }
 function pathHtml(path, compact) {
   if (!path || !path.length) return '';
-  var seenCur = false;
-  var steps = path.map(function (p) {
-    var st = p.st || p.s, cls = st;
-    if (st === 'pending') { cls = seenCur ? 'next' : 'cur'; seenCur = true; }
-    var ic = cls === 'done' ? '✓' : cls === 'rejected' ? '✕' : cls === 'skip' ? '–' : '';
-    var nm = p.name || p.n || '', rl = p.role || p.r || '';
-    var lab = { done: 'Approved', rejected: 'Rejected', cur: 'Waiting', next: 'Next', skip: 'Skipped' }[cls] || '';
-    return '<div class="ap s-' + cls + '" title="' + esc(rl + (nm ? ': ' + nm : '') + (p.rm ? ' · ' + p.rm : '')) + '"><i>' + ic + '</i><div><b>' + esc(nm || '—') + '</b><small>' + esc(rl) + '</small>' + (compact ? '' : '<em>' + lab + (p.at ? ' · ' + esc(p.at) : '') + (p.rm && cls !== 'done' ? ' · ' + esc(p.rm) : '') + '</em>') + '</div></div>';
+  var rows = [];
+  path.forEach(function (p) {
+    var st = p.st || p.s, nm = p.name || p.n || '', rl = p.role || p.r || '';
+    var last = rows[rows.length - 1];
+    if (nm && last && last.nm === nm && last.st === st) { if (last.rl.indexOf(rl) < 0) last.rl += ' + ' + rl; return; }
+    rows.push({ nm: nm, rl: rl, st: st, at: p.at || '' });
   });
-  return '<div class="apath' + (compact ? ' mini' : '') + '">' + steps.join('') + '</div>';
+  var seenCur = false;
+  var body = rows.map(function (x) {
+    var cls = x.st; if (cls === 'pending') { cls = seenCur ? 'next' : 'cur'; seenCur = true; }
+    var lab = { done: 'Approved', rejected: 'Rejected', cur: 'Waiting for approval', next: 'Pending', skip: 'Skipped' }[cls] || '';
+    var mark = cls === 'done' ? '\u2713 ' : cls === 'rejected' ? '\u2715 ' : '';
+    return '<tr class="s-' + cls + '"><td><b>' + esc(x.nm || '-') + '</b></td><td>' + esc(x.rl) + '</td><td class="st">' + mark + lab + '</td><td>' + esc(x.at || '') + '</td></tr>';
+  }).join('');
+  return '<table class="aptab' + (compact ? ' mini' : '') + '"><thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Date &amp; time</th></tr></thead><tbody>' + body + '</tbody></table>';
 }
 /* =====================================================================
    APPROVALS INBOX
