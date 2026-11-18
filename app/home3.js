@@ -174,7 +174,8 @@
   var tm = null;
   function soon() { clearTimeout(tm); tm = setTimeout(build, 80); }
   var c0 = $('content');
-  if (c0) new MutationObserver(soon).observe(c0, { childList: true });
+  if (c0) new MutationObserver(soon).observe(c0, { childList: true, subtree: true });
+  setInterval(function () { var v = c0 && c0.querySelector('.view'); if (v && v.querySelector('.hero2') && !v.querySelector('.hx')) build(); }, 1200);
   [300, 900, 1800, 3500].forEach(function (t) { setTimeout(build, t); });
   window.addEventListener('load', soon);
 })();
