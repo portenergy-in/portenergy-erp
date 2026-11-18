@@ -82,3 +82,39 @@
   window.addEventListener('focus', check);
   setTimeout(check, 5000);
 })();
+
+/* Update watcher: while the app stays open (desktop window / phone), look for a newer version every 3 minutes and when the window gets focus.
+   New version found -> clear banner at the TOP; on the sign-in screen it updates by itself. */
+(function () {
+  if (!window.fetch || location.protocol !== 'https:') return;
+  var shown = false;
+  function hard() {
+    var p = [];
+    try { if (window.caches) p.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); })); } catch (e) { }
+    try { if (navigator.serviceWorker) p.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); })); } catch (e) { }
+    var go = function () { location.replace(location.pathname + '?u=' + Date.now() + location.hash); };
+    Promise.all(p).then(go, go);
+  }
+  function banner(v) {
+    if (shown) return; shown = true;
+    var lg = document.getElementById('login');
+    if (lg && lg.style.display && lg.style.display !== 'none') { try { localStorage.setItem('pe_appver', v); } catch (e) { } return hard(); }
+    var d = document.createElement('div');
+    d.setAttribute('style', 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:99999;max-width:min(94vw,520px);background:#0A2E8A;color:#fff;border-radius:16px;padding:12px 14px 12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 18px 40px -12px rgba(10,46,138,.6);font:500 14px Poppins,system-ui,sans-serif');
+    d.innerHTML = '<div style="flex:1"><b style="display:block;font-size:15px">New version ready</b>Tap Update to get the latest Port Energy ERP.</div><button id="peUp2L" style="border:0;background:transparent;color:#C9D6FF;font-weight:600;padding:8px">Later</button><button id="peUp2N" style="border:0;background:#fff;color:#0A2E8A;font-weight:700;border-radius:10px;padding:10px 14px">Update</button>';
+    document.body.appendChild(d);
+    document.getElementById('peUp2N').onclick = function () { this.textContent = 'Updating…'; try { localStorage.setItem('pe_appver', v); } catch (e) { } hard(); };
+    document.getElementById('peUp2L').onclick = function () { d.remove(); setTimeout(function () { shown = false; }, 10 * 60 * 1000); };
+  }
+  function check() {
+    fetch('sw.js?c=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      var m = t.match(/pe-app-v[0-9]+/); if (!m) return;
+      var cur = null; try { cur = localStorage.getItem('pe_appver'); } catch (e) { }
+      if (cur && cur !== m[0]) banner(m[0]);
+    }).catch(function () { });
+  }
+  setInterval(check, 3 * 60 * 1000);
+  window.addEventListener('focus', check);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') check(); });
+  setTimeout(check, 20000);
+})();
