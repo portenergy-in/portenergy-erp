@@ -17,9 +17,9 @@ html body #login .lg-bg, html body #login .lg-scene { display: none !important; 
 html body #login .lg-svc, html body #login .lg-copy, html body #login .lg-stats { display: none !important; }
 
 /* ---------- logo + product name (top-left) ---------- */
-html body #login .lg-top { display: flex !important; flex-direction: column; align-items: flex-start; gap: 8px; border: 0 !important; padding: 0 !important; background: none !important; }
+html body #login .lg-top { display: flex !important; flex-direction: column; align-items: center; text-align: center; gap: 10px; border: 0 !important; padding: 0 !important; background: none !important; }
 html body #login .lg-logo { background: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
-html body #login .lg-logo img { height: clamp(58px, 10vh, 100px) !important; width: auto; display: block; }
+html body #login .lg-logo img { height: clamp(84px, 14vh, 140px) !important; width: auto; display: block; }
 html body #login .lg-top::after {
   content: "Enterprise Operations Platform (ERP)";
   font: 600 clamp(13px, 1.2vw, 17px)/1.2 Sora, Poppins, system-ui, sans-serif; letter-spacing: .05em;
@@ -199,7 +199,7 @@ html body #login .lg-foot i, html body #login .lg-foot span + i + span { display
     grid-template-rows: auto 1fr auto !important;
   }
   html body #login .lg-top { align-items: center; text-align: center; gap: 6px; margin-top: -8px; }
-  html body #login .lg-logo img { height: 46px !important; }
+  html body #login .lg-logo img { height: 66px !important; }
   html body #login .lg-top::after { font-size: 12.5px; }
   html body #login .lg-main { grid-template-columns: minmax(0, 1fr) !important; align-items: start !important; padding-top: 52px !important; }
   html body #login .lg-card { grid-column: 1 !important; justify-self: center; margin-right: 0; max-width: 440px !important; padding: 52px 20px 16px !important; border-radius: 28px !important; }
@@ -221,3 +221,11 @@ html body #login .lg-foot i, html body #login .lg-foot span + i + span { display
 }
 html.pe-lite body #login .lg-card::before, html.pe-lite .l3-bi, html.pe-lite .l3-bi::before { animation: none !important; }
 html.pe-lite body #login .lg-card { transform: none !important; }
+
+/* step-1 preview (photo + name): dark-theme white text was invisible on the light card */
+html body #login .lgx-peek { background: rgba(255, 255, 255, .72) !important; border-color: #D5DEF7 !important; }
+html body #login .lgx-peek b { color: #0D1A4F !important; font-weight: 700 !important; }
+html body #login .lgx-peek small { color: #3B4A86 !important; font-weight: 500 !important; }
+html body #login .lgx-peek.bad { background: #FDECEF !important; border-color: #F7C6D0 !important; }
+html body #login .lgx-peek.bad b, html body #login .lgx-peek.bad small { color: #A3133A !important; }
+html body #login .lgx-peek > i { color: #0E9F7A !important; }
