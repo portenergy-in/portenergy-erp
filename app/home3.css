@@ -261,3 +261,13 @@ html.pe-lite .hx-p, html.pe-lite .hx-kpi, html.pe-lite .hx-hero { box-shadow: no
 @keyframes peSign { to { transform: translateX(100%); } }
 @keyframes peProg { to { transform: scaleX(.92); } }
 @keyframes peSpin { to { transform: rotate(360deg); } }
+
+/* sidebar shortcut badges (Alt R, Alt G ...): small clean pill, never wraps */
+body #side .ni .tc { margin-left: auto; flex: none; white-space: nowrap; font-size: 10px; font-weight: 600; line-height: 1; padding: 4px 6px; border-radius: 6px; color: #C9D8FF; background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .16); letter-spacing: .2px; }
+html:not(.pe-dark) body #side .ni.on .tc { color: #fff; background: rgba(255, 255, 255, .22); }
+/* page change feedback: old page dims at once + thin progress bar until the new page is ready */
+#peNavBar { position: fixed; left: 0; top: 0; height: 3px; width: 100%; z-index: 99999; pointer-events: none; opacity: 0; transform: scaleX(0); transform-origin: left center; background: linear-gradient(90deg, #F0006C, #35C3F3); }
+body.pe-nav-wait #peNavBar { opacity: 1; animation: peNavBar 1.6s cubic-bezier(.2, .8, .2, 1) forwards; }
+@keyframes peNavBar { from { transform: scaleX(.05); } to { transform: scaleX(.9); } }
+body.pe-nav-wait #content .view { opacity: .45; transition: opacity .15s; }
+body.pe-nav-wait #content { cursor: progress; }
