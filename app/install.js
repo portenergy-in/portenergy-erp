@@ -79,4 +79,6 @@
   function check() { navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }).catch(function () { }); }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') check(); });
   setInterval(check, 30 * 60 * 1000);
+  window.addEventListener('focus', check);
+  setTimeout(check, 5000);
 })();
