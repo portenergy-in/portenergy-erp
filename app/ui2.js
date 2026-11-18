@@ -129,7 +129,7 @@
   }
   function addHero() {
     var h = document.querySelector('.dx-hero'); if (!h || h.querySelector('.md')) return;
-    h.insertAdjacentHTML('beforeend', mdCard('md-hero'));
+    /* MD photo card removed from the dashboard (Nov 2026) */
   }
   function addWelcome() {
     var w = document.querySelector('#welcome .wel-in'); if (!w || w.querySelector('.md')) return;
