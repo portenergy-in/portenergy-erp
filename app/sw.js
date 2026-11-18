@@ -6,12 +6,12 @@
  * Screens: open from the saved copy, then quietly fetch the newest copy for next time.
  * Change VERSION on each upload to clear old copies.
  */
-const VERSION = 'pe-app-v93';
+const VERSION = 'pe-app-v94';
 const SHELL = ['./', './index.html', './app.js', './smart.js', './bridge.js', './logo.js', './polish.css', './apple.css', './dash.css', './motion.js', './install.js', './wa.js', './dash.js', './login.css', './login.js', './loading.css', './fx.css', './refine.css', './pro.css', './brand.css', './dark.css', './login-lux.css', './img/heli.webp', './img/bg-day.webp', './img/bg-night.webp', './pro.js', './reports.js', './print.js', './books.js', './chat.js', './push.js', './ui2.js', './procure.js', './spell.js', './wx.js', './polls.js', './greetings.js', './whatsnew.js', './greetings.css', './fx.js', './refresh.css', './refresh.js', './home3.css', './home3.js',
   './manifest.webmanifest', '../config.js', '../icons/icon-192.png', '../icons/icon-512.png', '../icons/favicon.png'];
 
 self.addEventListener('install', function (e) {
-  e.waitUntil(caches.open(VERSION).then(function (c) { return Promise.all(SHELL.map(function (f) { return c.add(f).catch(function () { return null; }); })); }));
+  e.waitUntil(caches.open(VERSION).then(function (c) { return Promise.all(SHELL.map(function (f) { return c.add(new Request(f, { cache: 'reload' })).catch(function () { return null; }); })); }));
   self.skipWaiting();
 });
 
@@ -33,7 +33,7 @@ self.addEventListener('fetch', function (e) {
       let done = false;
       const fallback = function () { if (done) return; done = true; caches.match('./index.html').then(function (r) { resolve(r || Response.error()); }); };
       const t = setTimeout(fallback, 4000);
-      fetch(req).then(function (r) {
+      fetch(req.url, { cache: 'no-store' }).then(function (r) {
         clearTimeout(t);
         if (r && r.ok) { const c = r.clone(); caches.open(VERSION).then(function (x) { x.put('./index.html', c); }); }
         if (!done) { done = true; resolve(r); }
@@ -45,7 +45,7 @@ self.addEventListener('fetch', function (e) {
   // scripts, styles, icons: saved copy first (instant), refresh it in the background
   e.respondWith(caches.open(VERSION).then(function (c) {
     return c.match(req).then(function (hit) {
-      const net = fetch(req).then(function (r) { if (r && r.ok) c.put(req, r.clone()); return r; });
+      const net = fetch(req, { cache: 'no-cache' }).then(function (r) { if (r && r.ok) c.put(req, r.clone()); return r; });
       if (hit) { e.waitUntil(net.catch(function () { return null; })); return hit; }
       // new version stamp not cached yet: take it from the internet; offline -> any saved copy of the same file
       return net.catch(function () { return c.match(req, { ignoreSearch: true }).then(function (h) { return h || Response.error(); }); });
