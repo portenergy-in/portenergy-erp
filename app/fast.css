@@ -7,4 +7,5 @@ html.pe-fast :where(body *, body *::before, body *::after):not(#login):not(#logi
 html.pe-fast ::view-transition-group(*), html.pe-fast ::view-transition-old(*), html.pe-fast ::view-transition-new(*) { animation: none !important; }
 html.pe-fast .fx-in { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
 html.pe-fast .fx-tilt { transform: none !important; }
-#sideTools button[data-fast] { font-weight: 600; }
+#peFast { flex: none; width: 34px; height: 34px; border: 0; border-radius: 50%; cursor: pointer; font-size: 16px; line-height: 1; display: grid; place-items: center; background: rgba(255,255,255,.18); color: #fff; opacity: .65; margin: 0 6px; align-self: center; }
+#peFast.on { opacity: 1; background: linear-gradient(135deg, #FFD54A, #FF8A00); color: #3a2200; box-shadow: 0 4px 12px -4px rgba(255,138,0,.7); }
