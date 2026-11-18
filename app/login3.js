@@ -75,7 +75,7 @@
     function paint() {
       var v = inp.value || '';
       if (v === last && !paint.force) return; last = v; paint.force = false;
-      var n = Math.max(4, Math.min(6, v.length));          /* 4 boxes; a 5th / 6th appears only if the PIN is longer */
+      var n = 6;                                           /* always 6 boxes; a PIN of 4 to 6 digits is fine */
       wrap.style.setProperty('--n', n);
       for (var j = 0; j < 6; j++) {
         var ch = v.charAt(j);
