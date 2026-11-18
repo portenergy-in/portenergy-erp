@@ -232,3 +232,23 @@ body #side #nav { position: relative; z-index: 1; }
 
 body #side #meBtn { background: rgba(8, 27, 88, .82); border: 1px solid rgba(255,255,255,.14); }
 body #side #meBtn, body #side #meBtn * { color: #fff; }
+
+/* ===== ultra-smooth + hi-res (works on 60 / 120 / 144 Hz, retina and 4K) ===== */
+@media (min-resolution: 1.4dppx), (min-width: 1700px) {
+  .hx-hero { background: linear-gradient(90deg, #082A86 0%, #0A3AA8 34%, rgba(10, 58, 168, .55) 52%, rgba(10, 58, 168, 0) 72%), url(home-hero-2x.webp) right 55% / cover no-repeat, linear-gradient(120deg, #0B2A7A, #0B5BD3 70%, #3AA0FF); }
+  .hx-photo { background: url(home-site-2x.webp) center / cover no-repeat, linear-gradient(135deg, #0B5BD3, #35C3F3); }
+  body #side::after { background: url(home-side-2x.webp) center bottom / cover no-repeat; }
+}
+button, a, .ni, .ngh, .hx-kpi, .hx-q button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.main *, #side * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+body .main > .content { overscroll-behavior: contain; scroll-behavior: auto; }
+body #side #nav { overscroll-behavior: contain; contain: layout style; }
+body #side { contain: layout style; }
+body .main > .top { transform: translateZ(0); }
+.hx-p { contain: content; }
+.hx-r2, .hx-r3 { content-visibility: auto; contain-intrinsic-size: auto 330px; }
+.hx-hero, .hx-photo { transform: translateZ(0); }
+/* lite mode: switched on automatically (home3.js) only on weak or slow devices */
+html.pe-lite *, html.pe-lite *::before, html.pe-lite *::after { animation: none !important; transition: none !important; }
+html.pe-lite .hx-p, html.pe-lite .hx-kpi, html.pe-lite .hx-hero { box-shadow: none !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
