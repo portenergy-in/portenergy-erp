@@ -1,0 +1,49 @@
+/* (c) 2026 Port Energy Private Limited. Home dashboard v3 + Smart Features menu (Nov 2026). Loaded last. */
+/* 1. HOME DASHBOARD: NO ANIMATION (colours are not touched) */
+#content .view:has(.dx), #content .view:has(.dx) * { animation: none !important; }
+#content .view:has(.dx) .kpi, #content .view:has(.dx) .fx-tilt, #content .view:has(.dx) .dx-step { transform: none !important; }
+#content .view:has(.dx) * { transition-property: color, background-color, border-color, box-shadow, opacity !important; }
+.dx-shine, .dx-hero .md, .md.md-hero { display: none !important; }
+
+/* 2. SIMPLE ALIGNED LAYOUT: one 16px rhythm, equal card heights, same padding everywhere */
+.dx { gap: 16px; margin-bottom: 16px; }
+.dx-slot-kpi .kpis { grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)) !important; gap: 16px !important; }
+.kpi[data-dx] { min-height: 108px; padding: 18px 18px !important; align-items: center !important; border: 1px solid #E6EBF6; border-radius: 16px !important; }
+.kpi[data-dx] .l { font-size: 12px !important; letter-spacing: .06em; text-transform: uppercase; }
+.kpi[data-dx] .v { font-size: 26px !important; line-height: 1.15; }
+.kpi[data-dx] small { font-size: 12.5px; }
+.dx-row { gap: 16px !important; align-items: stretch !important; }
+.dx-r1 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) !important; }
+.dx-r2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important; }
+.dx-r3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
+.dx-p { padding: 18px 20px !important; height: 100%; }
+.dx-p h3 { margin: 0 0 14px !important; min-height: 28px; }
+.dx-r3 .dx-slot-inbox > .glass { padding: 18px 20px !important; }
+.dx-tail { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 0; }
+.dx-tail > .glass { margin: 0 !important; padding: 18px 20px !important; }
+@media (max-width: 1100px) { .dx-r1, .dx-r2, .dx-r3 { grid-template-columns: minmax(0, 1fr) !important; } }
+
+/* header: every control the same height, one line */
+.top { gap: 12px; align-items: center; }
+.top .btn.sm { height: 40px; min-width: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+
+/* 3. SMART FEATURES: the header tools live in one menu */
+.top #aiBtn, .top #peMeet, .top #peSmart, .top #peCalc { display: none !important; }
+#peSF { font-weight: 700; padding: 0 14px; white-space: nowrap; }
+#peSF svg { flex: none; }
+#peSF .sfc { transition: transform .15s; }
+#peSF[aria-expanded=true] .sfc { transform: rotate(180deg); }
+.sf-menu { position: fixed; z-index: 100000; width: min(330px, 92vw); background: #fff; border: 1px solid #E6EBF6; border-radius: 16px; box-shadow: 0 24px 60px -20px rgba(15, 27, 76, .45); padding: 8px; display: none; }
+.sf-menu.on { display: block; }
+.sf-h { font: 700 11px/1 var(--ap-text, sans-serif); letter-spacing: .16em; text-transform: uppercase; color: #7A84A8; padding: 10px 10px 8px; }
+.sf-i { display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; border: 0; background: none; padding: 10px; border-radius: 12px; cursor: pointer; color: #0F1B4C; font: inherit; }
+.sf-i:hover, .sf-i:focus-visible { background: #F3F6FC; outline: none; }
+.sf-i i { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: #fff; flex: none; }
+.sf-i b { display: block; font-size: 14px; color: #0F1B4C; }
+.sf-i small { display: block; margin-top: 2px; color: #7A84A8; font-size: 12px; line-height: 1.3; }
+.sf-none { padding: 14px 12px; color: #7A84A8; font-size: 13px; }
+.pe-dark .sf-menu { background: #101A4A; border-color: rgba(255, 255, 255, .12); }
+.pe-dark .sf-i, .pe-dark .sf-i b { color: #fff; }
+.pe-dark .sf-i:hover, .pe-dark .sf-i:focus-visible { background: rgba(255, 255, 255, .08); }
+.pe-dark .sf-h, .pe-dark .sf-i small { color: #9AA6D6; }
+@media (max-width: 760px) { #peSF .sft { display: none; } #peSF { padding: 0; width: 40px; } }
