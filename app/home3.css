@@ -1,7 +1,7 @@
 /* (c) 2026 Port Energy Private Limited. HOME DASHBOARD v5: dark-blue sidebar, blue header, mockup layout. Colours of the brand kept. */
 
 /* ---------- shell: sidebar ---------- */
-body .side { background: linear-gradient(180deg, #0A2A82 0%, #0A2370 55%, #081B58 100%) !important; border: 0 !important; color: #E3EAFF !important; position: relative; overflow: hidden; }
+body .side { background: linear-gradient(180deg, #0A2A82 0%, #0A2370 55%, #081B58 100%) !important; border: 0 !important; color: #E3EAFF !important; }
 body .side::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 320px; background: url(home-side.png) center bottom / cover no-repeat; opacity: .85; pointer-events: none; -webkit-mask-image: linear-gradient(180deg, transparent, #000 45%); mask-image: linear-gradient(180deg, transparent, #000 45%); z-index: 0; }
 body .side > * { position: relative; z-index: 1; }
 body .side .logo { background: #fff !important; margin: 0 0 16px !important; padding: 16px 22px !important; border-radius: 0 0 30px 0 !important; box-shadow: 0 8px 24px -12px rgba(0, 0, 0, .5); }
@@ -29,7 +29,7 @@ body .main > .top .topfind { background: rgba(255, 255, 255, .12) !important; bo
 body .main > .top .topfind kbd { background: rgba(255, 255, 255, .16) !important; color: #fff !important; border: 0 !important; }
 body.hx-home #ttl::after { content: ' / Dashboard'; font-weight: 400; opacity: .85; }
 body .main > .content { background: #F3F6FC; border-radius: 28px 0 0 0; min-height: calc(100vh - 68px); }
-body.pe-dark .main > .content, .pe-dark body .main > .content { background: #0B1226; }
+html.pe-dark body .main > .content { background: #0B1226; }
 
 /* ---------- dashboard ---------- */
 .view.hx-on > :not(.hx) { display: none !important; }
@@ -142,9 +142,9 @@ body.pe-dark .main > .content, .pe-dark body .main > .content { background: #0B1
   .hx-q { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hx-tb .hide-s { display: none; }
 }
-body.pe-dark .hx-p, body.pe-dark .hx-q button { background: #111A33; border-color: rgba(255, 255, 255, .1); }
-body.pe-dark .hx, body.pe-dark .hx-ph h3, body.pe-dark .hx-stats li b, body.pe-dark .hx-sum li b, body.pe-dark .hx-dc b, body.pe-dark .hx-act li b, body.pe-dark .hx-lst li { color: #E6ECFF; }
-body.pe-dark .hx-stats li, body.pe-dark .hx-sum li, body.pe-dark .hx-q button, body.pe-dark .hx-tb td, body.pe-dark .hx-act li { color: #C5CFEE; border-color: rgba(255, 255, 255, .08); }
-body.pe-dark .hx-tb th { background: #17214A; color: #C5CFEE; }
-body.pe-dark .hx-kpi { background: #111A33; border-color: rgba(255, 255, 255, .1); }
-body.pe-dark .hx-kpi .t, body.pe-dark .hx-kpi .v { color: #E6ECFF; }
+html.pe-dark .hx-p, html.pe-dark .hx-q button { background: #111A33; border-color: rgba(255, 255, 255, .1); }
+html.pe-dark .hx, html.pe-dark .hx-ph h3, html.pe-dark .hx-stats li b, html.pe-dark .hx-sum li b, html.pe-dark .hx-dc b, html.pe-dark .hx-act li b, html.pe-dark .hx-lst li { color: #E6ECFF; }
+html.pe-dark .hx-stats li, html.pe-dark .hx-sum li, html.pe-dark .hx-q button, html.pe-dark .hx-tb td, html.pe-dark .hx-act li { color: #C5CFEE; border-color: rgba(255, 255, 255, .08); }
+html.pe-dark .hx-tb th { background: #17214A; color: #C5CFEE; }
+html.pe-dark .hx-kpi { background: #111A33; border-color: rgba(255, 255, 255, .1); }
+html.pe-dark .hx-kpi .t, html.pe-dark .hx-kpi .v { color: #E6ECFF; }
