@@ -229,3 +229,19 @@ html body #login .lgx-peek small { color: #3B4A86 !important; font-weight: 500 !
 html body #login .lgx-peek.bad { background: #FDECEF !important; border-color: #F7C6D0 !important; }
 html body #login .lgx-peek.bad b, html body #login .lgx-peek.bad small { color: #A3133A !important; }
 html body #login .lgx-peek > i { color: #0E9F7A !important; }
+
+/* desktop: brand block sits centred in the open left half (clear of the card), larger and balanced */
+@media (min-width: 821px) {
+  html body #login .lg-top {
+    position: absolute !important; left: clamp(18px, 6vw, 110px); top: 0; bottom: 0; z-index: 3;
+    width: calc(100% - 440px - clamp(0px, 3.2vw, 70px) - clamp(18px, 6vw, 110px) * 2 - 24px);
+    justify-content: flex-start; padding-top: clamp(34px, 9vh, 96px) !important; gap: 14px; pointer-events: none;
+  }
+  html body #login .lg-logo img { height: clamp(92px, 16vh, 150px) !important; filter: drop-shadow(0 10px 22px rgba(20, 36, 127, .18)); }
+  html body #login .lg-top::after { font-size: clamp(14px, 1.25vw, 19px); letter-spacing: .08em; padding: 8px 18px; border-radius: 999px; background-color: rgba(255,255,255,.55); -webkit-text-fill-color: transparent; box-shadow: 0 8px 24px -14px rgba(20,36,127,.5); backdrop-filter: blur(6px); }
+}
+@media (min-width: 821px) {
+  html body #login { grid-template-rows: 0 1fr auto !important; }
+  html body #login .lg-main { grid-row: 2 !important; }
+  html body #login .lg-foot { grid-row: 3 !important; }
+}

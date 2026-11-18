@@ -43,7 +43,7 @@
     var ny = clamp((e.clientY - (r.top + r.height / 2)) / (window.innerHeight / 2), 1);
     var inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
     var f = inside ? 0.35 : 1;                 /* calmer while the pointer is on the card, so clicking stays easy */
-    tgt.ry = nx * 7 * f; tgt.rx = -ny * 5 * f;
+    tgt.ry = nx * 2.6 * f; tgt.rx = -ny * 2 * f;
     tgt.gx = clamp(((e.clientX - r.left) / r.width) * 100, 140) ; tgt.gy = clamp(((e.clientY - r.top) / r.height) * 100, 140);
     go();
   }, { passive: true });
