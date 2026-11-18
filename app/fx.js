@@ -30,6 +30,7 @@
       el.dataset.fx = '1';
       var p = el.parentElement && el.parentElement.closest('.fx-in');
       if (p && !p.classList.contains('fx-done')) return;          // parent already rising: let it carry the child
+      if (document.documentElement.classList.contains('pe-fast')) return;
       if (el.closest('#drawer')) return;                           // record / form panel is re-drawn when fresh data arrives: no re-animating (it looked like blinking)
       if (!inView(el)) return;                                     // off screen: show it as is
       var isRow = el.matches(ROW);

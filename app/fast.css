@@ -1,0 +1,10 @@
+/* Fast mode (default on): no entrance/transition animations - every click responds instantly.
+   Loading spinners and the sign-in screen are left alone. Toggle: side menu "Fast mode". */
+html.pe-fast :where(body *, body *::before, body *::after):not(#login):not(#login *):not(#boot):not(#boot *):not(.spin):not(.spin *):not(.pe-ptr *):not(.pe-bar i):not(.pe-net i):not(.wel-bar i):not(.dx-load i):not(.pb-load *) {
+  animation-duration: .001ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important;
+  transition-duration: .001ms !important; transition-delay: 0s !important; scroll-behavior: auto !important;
+}
+html.pe-fast ::view-transition-group(*), html.pe-fast ::view-transition-old(*), html.pe-fast ::view-transition-new(*) { animation: none !important; }
+html.pe-fast .fx-in { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+html.pe-fast .fx-tilt { transform: none !important; }
+#sideTools button[data-fast] { font-weight: 600; }

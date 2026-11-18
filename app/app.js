@@ -1083,7 +1083,7 @@ function openDetail(key, id) {
   var row = (S.cache[key] || []).filter(function (x) { return x.id === id; })[0];
   /* show the cached copy only if the server is slow (>220 ms); a fast answer is drawn once, so the panel does not flicker */
   var pvT = 0;
-  if (row) { pvT = setTimeout(function () { if (!S.openRec || S.openRec.id !== id || !$('pane')) return; renderDetail(e, { rec: row, actions: [], canEdit: false, canDelete: false, extra: {} }); $('pane').classList.add('pe-pv'); }, 220); } else skeleton($('dbody'), 9);
+  if (row) { pvT = setTimeout(function () { if (!S.openRec || S.openRec.id !== id || !$('pane')) return; renderDetail(e, { rec: row, actions: [], canEdit: false, canDelete: false, extra: {} }); $('pane').classList.add('pe-pv'); }, (window.PE_FAST && window.PE_FAST()) ? 60 : 220); } else skeleton($('dbody'), 9);
   call('getRecord', S.token, key, id).then(function (res) { clearTimeout(pvT); if (!S.openRec || S.openRec.id !== id) return; $('pane').classList.remove('pe-pv'); renderDetail(e, res); }).catch(function (x) { $('dbody').innerHTML = '<div class="empty"><b>Could not open</b>' + esc(x.message) + '</div>'; });
 }
 function renderDetail(e, res) {
