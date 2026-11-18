@@ -109,7 +109,7 @@
     return '<section class="dx-hero">' + ART + '<i class="dx-shine"></i>' +
       '<div class="dx-hl"><div class="dx-eye">' + (exec ? 'Executive dashboard' : 'My dashboard') + '</div>' +
       '<h2>' + (exec ? 'Company Operations Overview' : g + (nm ? ', ' + esc(nm) : '')) + '</h2>' +
-      '<p>' + ico('clock', 15) + ' ' + DAY[t.getDay()] + ', ' + ('0' + t.getDate()).slice(-2) + ' ' + MON[t.getMonth()] + ' ' + t.getFullYear() + ' <i></i> Chennai, TN' + (exec && nm ? ' <i></i> ' + g + ', ' + esc(nm) : '') + '</p>' +
+      '<p>' + ico('clock', 15) + ' ' + DAY[t.getDay()] + ', ' + ('0' + t.getDate()).slice(-2) + ' ' + MON[t.getMonth()] + ' ' + t.getFullYear() + '' + (exec && nm ? ' <i></i> ' + g + ', ' + esc(nm) : '') + '</p>' +
       '<button class="dx-find" type="button" data-dx-find>' + ico('search', 16) + ' Search PO, vendor, item, bill <kbd>Ctrl K</kbd></button></div>' +
       '<div class="dx-motto">Impossible can be <b>possible.</b></div></section>';
   }
