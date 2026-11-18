@@ -1,25 +1,26 @@
 /* (c) 2026 Port Energy Private Limited. HOME DASHBOARD v5: dark-blue sidebar, blue header, mockup layout. Colours of the brand kept. */
 
 /* ---------- shell: sidebar ---------- */
-body .side { background: linear-gradient(180deg, #0A2A82 0%, #0A2370 55%, #081B58 100%) !important; border: 0 !important; color: #E3EAFF !important; }
-body .side::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 320px; background: url(home-side.png) center bottom / cover no-repeat; opacity: .85; pointer-events: none; -webkit-mask-image: linear-gradient(180deg, transparent, #000 45%); mask-image: linear-gradient(180deg, transparent, #000 45%); z-index: 0; }
-body .side > * { position: relative; z-index: 1; }
-body .side .logo { background: #fff !important; margin: 0 0 16px !important; padding: 16px 22px !important; border-radius: 0 0 30px 0 !important; box-shadow: 0 8px 24px -12px rgba(0, 0, 0, .5); }
-body .side .logo img { max-width: 100%; height: auto; }
-body .side #sideFind, body .side #sideTools { display: none !important; }
-body .side .ni { color: #DCE6FF !important; border-radius: 12px !important; background: transparent !important; box-shadow: none !important; }
-body .side .ni svg { stroke: currentColor; color: #DCE6FF; }
-body .side .ni:hover { background: rgba(255, 255, 255, .09) !important; }
-body .side .ni.on { background: linear-gradient(90deg, #F0006C, #E0245E) !important; color: #fff !important; box-shadow: 0 10px 22px -10px rgba(240, 0, 108, .8) !important; }
-body .side .ni.on svg { color: #fff; }
-body .side .ngh { color: #8FA6E6 !important; }
-body .side .ct { background: #F0006C !important; color: #fff !important; }
-body .side .tc { color: #7F98DE !important; }
-body .side .me { background: rgba(255, 255, 255, .09) !important; border: 1px solid rgba(255, 255, 255, .16) !important; color: #fff !important; border-radius: 16px !important; }
-body .side .me * { color: inherit; }
+body #side { background: linear-gradient(180deg, #0A2A82 0%, #0A2370 55%, #081B58 100%) !important; border: 0 !important; color: #E3EAFF !important; }
+body #side::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 320px; background: url(home-side.png) center bottom / cover no-repeat; opacity: .85; pointer-events: none; -webkit-mask-image: linear-gradient(180deg, transparent, #000 45%); mask-image: linear-gradient(180deg, transparent, #000 45%); z-index: 0; }
+body #side > * { position: relative; z-index: 1; }
+body #side .logo { background: #fff !important; margin: 0 0 16px !important; padding: 16px 22px !important; border-radius: 0 0 30px 0 !important; box-shadow: 0 8px 24px -12px rgba(0, 0, 0, .5); }
+body #side .logo img { max-width: 100%; height: auto; }
+body #side #sideFind, body #side #sideTools { display: none !important; }
+body #side .ni { color: #DCE6FF !important; border-radius: 12px !important; background: transparent !important; box-shadow: none !important; }
+body #side .ni svg { stroke: currentColor; color: #DCE6FF; }
+body #side .ni:hover { background: rgba(255, 255, 255, .09) !important; }
+body #side .ni.on { background: linear-gradient(90deg, #F0006C, #E0245E) !important; color: #fff !important; box-shadow: 0 10px 22px -10px rgba(240, 0, 108, .8) !important; }
+body #side .ni.on svg { color: #fff; }
+body #side .ngh { color: #8FA6E6 !important; }
+body #side .ct { background: #F0006C !important; color: #fff !important; }
+body #side .tc { color: #7F98DE !important; }
+body #side .me { background: rgba(255, 255, 255, .09) !important; border: 1px solid rgba(255, 255, 255, .16) !important; color: #fff !important; border-radius: 16px !important; }
+body #side .me * { color: inherit; }
 
 /* ---------- shell: header + content ---------- */
-body .main { background: #0B4BC4; }
+body .main { background: linear-gradient(180deg, #0B4BC4 0, #0B4BC4 100px, #F3F6FC 100px); }
+html.pe-dark body .main { background: linear-gradient(180deg, #0B4BC4 0, #0B4BC4 100px, #0B1226 100px); }
 body .main > .top { background: linear-gradient(90deg, #0A3AA8 0%, #0B52CE 55%, #0A44B8 100%) !important; border: 0 !important; box-shadow: none !important; color: #fff !important; }
 body .main > .top h1, body .main > .top .crumb, body .main > .top .clk, body .main > .top .clk b, body .main > .top .clk small { color: #fff !important; }
 body .main > .top .crumb, body .main > .top .clk small { opacity: .8; }
@@ -37,7 +38,7 @@ html.pe-dark body .main > .content { background: #0B1226; }
 .hx * { box-sizing: border-box; }
 .hx button { font-family: inherit; }
 
-.hx-hero { position: relative; border-radius: 24px; overflow: hidden; min-height: 210px; padding: 34px 42px; color: #fff; background: linear-gradient(90deg, #082A86 0%, #0A3AA8 34%, rgba(10, 58, 168, .55) 52%, rgba(10, 58, 168, 0) 72%), url(home-hero.png) right 55% / cover no-repeat, linear-gradient(120deg, #0B2A7A, #0B5BD3 70%, #3AA0FF); box-shadow: 0 14px 34px -18px rgba(10, 42, 130, .7); }
+.hx-hero { position: relative; border-radius: 24px; overflow: hidden; min-height: 200px; padding: 28px 42px; color: #fff; background: linear-gradient(90deg, #082A86 0%, #0A3AA8 34%, rgba(10, 58, 168, .55) 52%, rgba(10, 58, 168, 0) 72%), url(home-hero.png) right 55% / cover no-repeat, linear-gradient(120deg, #0B2A7A, #0B5BD3 70%, #3AA0FF); box-shadow: 0 14px 34px -18px rgba(10, 42, 130, .7); }
 .hx-eye { font-size: 14px; font-weight: 700; letter-spacing: .3em; color: #35C3F3; }
 .hx-eye b { color: #FF3D8B; }
 .hx-hero h2 { margin: 12px 0 14px; font-size: clamp(28px, 3.1vw, 44px); line-height: 1.1; font-weight: 800; color: #fff; letter-spacing: -.01em; }
@@ -148,3 +149,5 @@ html.pe-dark .hx-stats li, html.pe-dark .hx-sum li, html.pe-dark .hx-q button, h
 html.pe-dark .hx-tb th { background: #17214A; color: #C5CFEE; }
 html.pe-dark .hx-kpi { background: #111A33; border-color: rgba(255, 255, 255, .1); }
 html.pe-dark .hx-kpi .t, html.pe-dark .hx-kpi .v { color: #E6ECFF; }
+
+.hx-kpi { padding: 18px 18px; gap: 12px; } .hx-kpi .ico { width: 50px; height: 50px; } .hx-kpi .ico svg { width: 24px; height: 24px; } .hx-kpi .t { font-size: 14px; } .hx-kpi .v { font-size: 27px; } .hx-kpi .ch { right: 12px; top: 12px; }
