@@ -216,3 +216,11 @@ body #side .ni svg { width: 19px; height: 19px; }
 /* 5 KPI cards always in one row on desktop (also at 125-150% Windows scaling) */
 @media (min-width: 900px) { .hx-k { grid-template-columns: repeat(5, minmax(0, 1fr)); } .hx-kpi .tx { min-width: 0; } .hx-kpi .t, .hx-kpi .s { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
 @media (min-width: 900px) and (max-width: 1300px) { .hx-k { gap: 10px; } .hx-kpi { padding: 12px 10px; gap: 8px; } .hx-kpi .ico { width: 34px; height: 34px; flex: none; } .hx-kpi .ico svg { width: 20px; height: 20px; } .hx-kpi .v { font-size: 19px; } .hx-kpi .t { font-size: 12.5px; } .hx-kpi .s { font-size: 10.5px; } .hx-kpi .ch { display: none; } }
+
+/* sidebar art always visible: reserve room under the menu, scales with screen height */
+body #side #nav { margin-bottom: clamp(0px, calc(100vh - 640px), 170px); }
+body #side::after { height: 300px; bottom: 0; opacity: 1; }
+/* adapt to every screen */
+@media (min-width: 1700px) { .hx { max-width: 1680px; margin-left: auto; margin-right: auto; } }
+@media (max-width: 900px) { .hx-k { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .hx-k { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .hx-kpi { padding: 12px 10px; gap: 8px; } .hx-kpi .ico { width: 34px; height: 34px; flex: none; } .hx-kpi .ico svg { width: 20px; height: 20px; } .hx-kpi .ch { display: none; } .hx-kpi .v { font-size: 19px; } .hx-kpi .tx { min-width: 0; } .hx-kpi .s { font-size: 10.5px; } .hx-hero { padding: 18px 16px; } .hx-hero h2 { font-size: 22px; } }
