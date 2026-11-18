@@ -1089,7 +1089,7 @@ function renderDetail(e, res) {
   var can = function (k) { return ent(k) && ent(k).canCreate; };
   if (res.canEdit) acts.push('<button class="btn soft" data-edit>Edit</button>');
   if (e.key === 'pr' && r.status === 'Approved') { if (can('po')) acts.push('<button class="btn primary" data-mk="po">Convert to Order</button>'); if (can('quotes')) acts.push('<button class="btn soft" data-mk="quotes">Compare quotations</button>'); }
-  if (e.key === 'quotes' && r.status === 'Open' && can('po') && r.l1Vendor) acts.push('<button class="btn primary" data-mk="poL1">Create PO from L1 · ' + esc(r.l1Vendor) + '</button>');
+  if (e.key === 'quotes' && r.status === 'Open' && can('po') && r.l1Vendor) acts.push('<button class="btn primary" data-mk="poL1">Create PO from L1 · ' + esc(r.l1Vendor) + (r.l1Col && offTag(r, r.l1Col) ? ' (' + esc(offTag(r, r.l1Col)) + ')' : '') + '</button>');
   if (e.key === 'po' && can('po')) acts.push('<button class="btn soft" data-mk="copy">' + icon('copy', 15) + 'Copy as new PO</button>');
   if (e.key === 'po' && ['Approved', 'Sent to Vendor', 'Partially Received'].indexOf(r.status) > -1 && can('grn')) acts.push('<button class="btn soft" data-mk="grn">Receive goods (MIGO)</button>');
   if (e.key === 'po' && ['Partially Received', 'Received', 'Closed'].indexOf(r.status) > -1 && can('bills')) acts.push('<button class="btn soft" data-mk="bills">Enter bill (MIRO)</button>');
@@ -1107,7 +1107,7 @@ function renderDetail(e, res) {
     (ak.pending ? '<p class="note" style="margin-top:10px">Pending (' + ak.pending.length + '):</p><div>' + (ak.pending.map(function (n) { return '<span class="pchip">' + esc(n) + '</span>'; }).join('') || '<span class="note">Everyone has acknowledged.</span>') + '</div>' : '') +
     (ak.acks && ak.acks.length ? '<p class="note" style="margin-top:10px">Acknowledged:</p><div>' + ak.acks.map(function (a) { return '<span class="pchip" style="background:#E3F7EF">' + esc(a.name) + ' · ' + esc(a.at) + '</span>'; }).join('') + '</div>' : '') + '</div>'; }
   if (e.key === 'quotes') body += cmpTable(r);
-  var plain = e.fields.filter(function (f) { return !f.sec && f.t !== 'files' && f.t !== 'hidden' && f.k !== 'acks' && r[f.k] !== '' && r[f.k] != null && !(e.key === 'quotes' && /^(tot\d|vendor\d)$/.test(f.k)); });
+  var plain = e.fields.filter(function (f) { return !f.sec && f.t !== 'files' && f.t !== 'hidden' && f.k !== 'acks' && r[f.k] !== '' && r[f.k] != null && !(e.key === 'quotes' && /^(tot\d|vendor\d|off\d|l1Col)$/.test(f.k)); });
   var secF = e.fields.filter(function (f) { return f.sec && r[f.k] !== '' && r[f.k] != null; });
   body += '<div class="sec"><div class="kv">' + plain.map(function (f) { return '<div class="' + (f.t === 'textarea' ? 'wide' : '') + '"><span>' + esc(f.l) + '</span><b>' + fval(f, r[f.k]) + '</b></div>'; }).join('') + '</div></div>';
   if (e.lines && (r.lines || []).length && e.key !== 'quotes') {
@@ -1151,14 +1151,32 @@ function renderDetail(e, res) {
   if (e.key === 'items' && $('x360')) call('itemInsight', S.token, r.name).then(function (ii) { if (!ii || !$('x360') || !ii.history.length) return; $('x360').innerHTML = '<div class="sec"><h4>Purchase history</h4><div class="kv" style="margin-bottom:12px"><div><span>Last rate</span><b>' + inr(ii.last.rate) + '</b></div><div><span>Lowest</span><b>' + inr(ii.min) + '</b></div><div><span>Average</span><b>' + inr(ii.avg) + '</b></div></div><table class="tb"><thead><tr><th>Date</th><th>PO</th><th>Vendor</th><th class="num">Qty</th><th class="num">Rate</th></tr></thead><tbody>' + ii.history.map(function (hh) { return '<tr class="click" data-rel="po" data-id="' + esc(hh.po) + '"><td>' + fdate(hh.date) + '</td><td>' + esc(hh.po) + '</td><td>' + esc(hh.vendor) + '</td><td class="num">' + esc(hh.qty) + ' ' + esc(hh.uom || '') + '</td><td class="num">' + inr(hh.rate) + '</td></tr>'; }).join('') + '</tbody></table></div>'; bindRel(); }).catch(function () { });
   function bindRel() { $('pane').querySelectorAll('[data-rel]').forEach(function (b) { b.onclick = function () { openDetail(b.dataset.rel, b.dataset.id); }; }); }
 }
+function secRows(lines, ncol, rowFn, subFn) {
+  lines = lines || [];
+  if (!lines.some(function (l) { return l.sec; })) return lines.map(rowFn).join('');
+  var out = '', cur = null, grp = [];
+  var flush = function () { if (grp.length && subFn) out += subFn(grp, cur); grp = []; };
+  lines.forEach(function (l, i) {
+    var s = l.sec || 'General';
+    if (s !== cur) { flush(); cur = s; out += '<tr class="sech"><td colspan="' + ncol + '" style="background:#eef2f7;font-weight:700">' + esc(s) + '</td></tr>'; }
+    grp.push(l); out += rowFn(l, i);
+  });
+  flush(); return out;
+}
+function secSub(sl, vs, name, lead, pr) {
+  return '<tr class="b"><td colspan="' + lead + '" class="r">Subtotal incl. GST - ' + esc(name) + '</td>' + vs.map(function (n) { var t = 0, ok = true; sl.forEach(function (l) { var v = l['r' + n]; if (v === '' || v == null || !(num(v) > 0)) ok = false; else t += num(l.qty) * num(v) * (1 + num(l.gst) / 100); }); return '<td class="' + (pr ? 'r' : 'num') + '">' + (ok ? (pr ? t.toFixed(2) : inr(t)) : '-') + '</td>'; }).join('') + '</tr>';
+}
+function offTag(r, n) { return r['off' + n] ? String(r['off' + n]) : ''; }
 function cmpTable(r) {
   var vs = [1, 2, 3, 4].filter(function (n) { return r['vendor' + n]; });
-  var win = function (n) { return r['vendor' + n] === r.l1Vendor; };
-  return '<div class="sec"><h4>Quotation comparison ' + (r.l1Vendor ? '<span class="badge b-ok">L1: ' + esc(r.l1Vendor) + ' · ' + inr(r.l1Total) + '</span>' : '') + (num(r.saving) ? '<span class="badge b-info">Saves ' + inr(r.saving) + ' vs L2</span>' : '') + '</h4><div style="overflow:auto"><table class="tb cmp"><thead><tr><th>#</th><th>Item</th><th class="num">Qty</th><th>UOM</th><th class="num">GST</th>' +
-    vs.map(function (n) { return '<th class="num' + (win(n) ? ' l1' : '') + '">' + esc(r['vendor' + n]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
-    (r.lines || []).map(function (l, i) { return '<tr><td>' + (i + 1) + '</td><td style="max-width:none;white-space:normal">' + esc(l.item) + '</td><td class="num">' + esc(l.qty) + '</td><td>' + esc(l.uom) + '</td><td class="num">' + esc(l.gst) + '%</td>' + vs.map(function (n) { return '<td class="v' + (l.best === 'V' + n ? ' win' : '') + '">' + (l['r' + n] !== '' && l['r' + n] != null ? inr(l['r' + n], true) : '<span class="note">no quote</span>') + '</td>'; }).join('') + '</tr>'; }).join('') +
+  var win = function (n) { return r.l1Col ? String(r.l1Col) === String(n) : r['vendor' + n] === r.l1Vendor; };
+  var l1o = r.l1Col ? offTag(r, r.l1Col) : '';
+  return '<div class="sec"><h4>Quotation comparison ' + (r.l1Vendor ? '<span class="badge b-ok">L1: ' + esc(r.l1Vendor) + (l1o ? ' (' + esc(l1o) + ')' : '') + ' · ' + inr(r.l1Total) + '</span>' : '') + (num(r.saving) ? '<span class="badge b-info">Saves ' + inr(r.saving) + ' vs L2</span>' : '') + '</h4><div style="overflow:auto"><table class="tb cmp"><thead><tr><th>#</th><th>Item</th><th class="num">Qty</th><th>UOM</th><th class="num">GST</th>' +
+    vs.map(function (n) { return '<th class="num' + (win(n) ? ' l1' : '') + '">' + esc(r['vendor' + n]) + (offTag(r, n) ? '<div class="note">' + esc(offTag(r, n)) + '</div>' : '') + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    secRows(r.lines, 5 + vs.length, function (l, i) { return '<tr><td>' + (i + 1) + '</td><td style="max-width:none;white-space:normal">' + esc(l.item) + '</td><td class="num">' + esc(l.qty) + '</td><td>' + esc(l.uom) + '</td><td class="num">' + esc(l.gst) + '%</td>' + vs.map(function (n) { return '<td class="v' + (l.best === 'V' + n ? ' win' : '') + '">' + (l['r' + n] !== '' && l['r' + n] != null ? inr(l['r' + n], true) : '<span class="note">no quote</span>') + '</td>'; }).join('') + '</tr>'; }, function (sl, name) { return secSub(sl, vs, name, 5, false); }) +
     '</tbody><tfoot><tr><td colspan="5">Total incl. GST</td>' + vs.map(function (n) { return '<td class="num' + (win(n) ? ' win' : '') + '">' + inr(r['tot' + n]) + '</td>'; }).join('') + '</tr></tfoot></table></div><p class="note" style="margin-top:8px">Green = lowest rate per item. L1 counts only vendors who quoted every item.</p></div>';
 }
+
 function related(title, rows, key, txt) { return '<div class="sec"><h4>' + title + '</h4><div class="list">' + rows.map(function (x) { return '<div class="li click" data-rel="' + key + '" data-id="' + esc(x.id) + '"><div class="t"><b>' + esc(x.id) + '</b><p>' + txt(x) + '</p></div>' + badge(x.status) + '</div>'; }).join('') + '</div></div>'; }
 function runAction(e, r, a, btn) {
   var needs = a.remark || a.input || a.confirm || a.proof;
@@ -1189,12 +1207,12 @@ function runAction(e, r, a, btn) {
   };
 }
 function poLinesFrom(lines, rateKey) {
-  return (lines || []).map(function (l) { var it = findOpt('items', l.item) || {}; return { item: l.item, desc: l.desc || '', hsn: l.hsn || it.hsn || '', qty: l.qty, uom: l.uom || it.uom || '', rate: rateKey ? l[rateKey] : (l.rate || it.last || it.rate || ''), disc: l.disc || 0, gst: String(l.gst || it.gst || '18') }; });
+  return (lines || []).map(function (l) { var it = findOpt('items', l.item) || {}; return { sec: l.sec || '', item: l.item, desc: l.desc || '', hsn: l.hsn || it.hsn || '', qty: l.qty, uom: l.uom || it.uom || '', rate: rateKey ? l[rateKey] : (l.rate || it.last || it.rate || ''), disc: l.disc || 0, gst: String(l.gst || it.gst || '18') }; });
 }
 function makeFrom(target, srcKey, r) {
   if (target === 'po') return openForm('po', null, { prRef: r.id, department: r.department, project: r.project, subject: 'Order for supply of ' + (r.purpose || ''), lines: poLinesFrom(r.lines) });
-  if (target === 'quotes') return openForm('quotes', null, { prRef: r.id, department: r.department, project: r.project, subject: r.purpose || '', lines: (r.lines || []).map(function (l) { var it = findOpt('items', l.item) || {}; return { item: l.item, hsn: it.hsn || '', qty: l.qty, uom: l.uom || it.uom || '', gst: String(it.gst || '18') }; }) });
-  if (target === 'poL1') { var n = [1, 2, 3, 4].filter(function (k) { return r['vendor' + k] === r.l1Vendor; })[0]; return openForm('po', null, { qcRef: r.id, prRef: r.prRef || '', vendor: r.l1Vendor, department: r.department, project: r.project, subject: 'Order for supply of ' + (r.subject || ''), lines: poLinesFrom(r.lines, 'r' + n) }); }
+  if (target === 'quotes') return openForm('quotes', null, { prRef: r.id, department: r.department, project: r.project, subject: r.purpose || '', lines: (r.lines || []).map(function (l) { var it = findOpt('items', l.item) || {}; return { sec: l.sec || '', item: l.item, hsn: it.hsn || '', qty: l.qty, uom: l.uom || it.uom || '', gst: String(it.gst || '18') }; }) });
+  if (target === 'poL1') { var n = +r.l1Col || [1, 2, 3, 4].filter(function (k) { return r['vendor' + k] === r.l1Vendor; })[0]; return openForm('po', null, { qcRef: r.id, prRef: r.prRef || '', vendor: r.l1Vendor, department: r.department, project: r.project, subject: 'Order for supply of ' + (r.subject || ''), lines: poLinesFrom(r.lines, 'r' + n) }); }
   if (target === 'copy') return openForm('po', null, copyPoPreset(r));
   if (target === 'poV') return openForm('po', null, { vendor: r.name, paymentTerms: r.paymentTerms || '30 Days' });
   if (target === 'grn') return openForm('grn', null, { poRef: r.id });
@@ -1305,7 +1323,7 @@ function onFieldChange(k) {
   if (key === 'bills' && (k === 'taxable' || k === 'gstRate' || k === 'vendor')) gstSplit();
   if (key === 'bills' && (k === 'tdsPct' || k === 'taxable')) { if (num(r.tdsPct) > 0) setField('tds', r2(num(r.taxable) * num(r.tdsPct) / 100)); }
   if (key === 'payments' && k === 'billRef') { var b = findOpt('payableBills', r.billRef); if (b) { setField('vendor', b.vendor); setField('amount', r2(b.balance)); assistVendor(b.vendor); } }
-  if (key === 'quotes' && /^vendor\d$/.test(k)) renderLines();
+  if (key === 'quotes' && /^(vendor|off)\d$/.test(k)) renderLines();
   if (window.PE_FIELD_CHANGE) try { PE_FIELD_CHANGE(F, k, setField, setHint); } catch (x) { }
   if (key === 'approvals' && k === 'toName') { var uo = findOpt('users', r.toName); if (uo) { r.toDept = uo.dept || ''; r.toDesg = uo.des || ''; setHint('toName', esc((uo.des || '') + (uo.dept ? ' · ' + uo.dept : '')), 'ok'); } }
   refreshRoute();
@@ -1351,7 +1369,7 @@ function renderLines() {
   var cols = e.lines.cols.filter(function (c) { return c.t !== 'hidden'; });
   if (key === 'quotes') cols = cols.filter(function (c) { var m = /^r(\d)$/.exec(c.k); return !m || F.rec['vendor' + m[1]]; });
   if (!F.lines.length) { $('ln').innerHTML = '<tr><td class="note" style="padding:14px">' + (key === 'grn' ? 'Select a PO to load its pending items.' : 'No lines.') + '</td></tr>'; return; }
-  var label = function (c) { var m = /^r(\d)$/.exec(c.k); return m && key === 'quotes' ? esc(String(F.rec['vendor' + m[1]]).slice(0, 18)) : esc(c.l); };
+  var label = function (c) { var m = /^r(\d)$/.exec(c.k); return m && key === 'quotes' ? esc(String(F.rec['vendor' + m[1]]).slice(0, 18) + (F.rec['off' + m[1]] ? ' · ' + String(F.rec['off' + m[1]]).slice(0, 10) : '')) : esc(c.l); };
   $('ln').innerHTML = '<thead><tr><th>#</th>' + cols.map(function (c) { return '<th>' + label(c) + (c.req ? ' <span class="req">*</span>' : '') + '</th>'; }).join('') + (fixed ? '' : '<th></th>') + '</tr></thead><tbody>' +
     F.lines.map(function (l, i) {
       return '<tr data-i="' + i + '"><td class="n">' + (i + 1) + '</td>' + cols.map(function (c) {
@@ -1405,7 +1423,7 @@ function lineAuto(k, l) {
   if (k === 'amount') return inr(r2(num(l.qty) * num(l.rate) * (1 - num(l.disc) / 100)), true);
   if (k === 'rejected') return r2(num(l.received) - num(l.accepted));
   if (k === 'recd' || k === 'ordered' || k === 'prev') return num(l[k]);
-  if (k === 'best') { var b = -1, br = Infinity; [1, 2, 3, 4].forEach(function (n) { var v = l['r' + n]; if (F.rec['vendor' + n] && v !== '' && v != null && num(v) > 0 && num(v) < br) { br = num(v); b = n; } }); return b > 0 ? String(F.rec['vendor' + b]).slice(0, 14) : ''; }
+  if (k === 'best') { var b = -1, br = Infinity; [1, 2, 3, 4].forEach(function (n) { var v = l['r' + n]; if (F.rec['vendor' + n] && v !== '' && v != null && num(v) > 0 && num(v) < br) { br = num(v); b = n; } }); return b > 0 ? String(F.rec['vendor' + b]).slice(0, 14) + (F.rec['off' + b] ? ' · ' + String(F.rec['off' + b]).slice(0, 10) : '') : ''; }
   return l[k] == null ? '' : l[k];
 }
 function calcPreview() {
@@ -1799,7 +1817,7 @@ function printPO(r, x) {
   var v = x.vendor || {}, co = S.sess.config.companies[0], cfg = S.sess.config;
   var wo = r.orderType === 'Work Order' || r.orderType === 'Service Order', amd = num(r.amdNo) > 0, no = r.docNo || r.id;
   var title = (amd ? 'AMENDMENT ' : '') + String(r.orderType || 'Purchase Order').toUpperCase();
-  var rows = (r.lines || []).map(function (l, i) { var rate = r2(num(l.rate) * (1 - num(l.disc) / 100)); return '<tr><td class="ct">' + (i + 1) + '.</td><td>' + nl(l.item + (l.desc ? ' - ' + l.desc : '')) + '</td><td class="ct">' + esc(l.hsn || '') + '</td><td class="ct">' + esc(l.uom) + '</td><td class="ct">' + esc(l.qty) + '</td><td class="r">' + rate.toFixed(2) + '</td><td class="r">' + num(l.amount).toFixed(2) + '</td></tr>'; }).join('');
+  var rows = secRows(r.lines, 7, function (l, i) { var rate = r2(num(l.rate) * (1 - num(l.disc) / 100)); return '<tr><td class="ct">' + (i + 1) + '.</td><td>' + nl(l.item + (l.desc ? ' - ' + l.desc : '')) + '</td><td class="ct">' + esc(l.hsn || '') + '</td><td class="ct">' + esc(l.uom) + '</td><td class="ct">' + esc(l.qty) + '</td><td class="r">' + rate.toFixed(2) + '</td><td class="r">' + num(l.amount).toFixed(2) + '</td></tr>'; }, function (sl, name) { var t = 0; sl.forEach(function (l) { t += num(l.amount); }); return '<tr class="b"><td colspan="6" class="r">Subtotal - ' + esc(name) + '</td><td class="r">' + t.toFixed(2) + '</td></tr>'; });
   var g = {}; (r.lines || []).forEach(function (l) { var k = String(num(l.gst)); g[k] = (g[k] || 0) + num(l.gstAmt != null ? l.gstAmt : r2(num(l.amount) * num(l.gst) / 100)); });
   var tail = '<tr><td colspan="6" class="r b">Sub-Total in INR</td><td class="r b">' + num(r.subtotal).toFixed(2) + '</td></tr>' +
     Object.keys(g).filter(function (k) { return num(k) > 0; }).map(function (k) { return '<tr><td colspan="6" class="r b">GST@' + k + '%</td><td class="r b">' + r2(g[k]).toFixed(2) + '</td></tr>'; }).join('') +
@@ -1854,12 +1872,12 @@ function printQuotes(r, x) {
   x = x || {};
   var vs = [1, 2, 3, 4].filter(function (n) { return r['vendor' + n]; });
   var body = '<p class="ct b u" style="font-size:12pt">QUOTATION COMPARISON STATEMENT</p><table style="width:100%;margin:4mm 0"><tr><td class="b">No: ' + esc(r.id) + '</td><td class="b">Subject: ' + esc(r.subject) + '</td><td class="b r">Date: ' + ddot(r.date) + '</td></tr><tr><td colspan="3">Project: ' + esc(r.project || '-') + (r.prRef ? ' · PR: ' + esc(r.prRef) : '') + '</td></tr></table>' +
-    '<table class="t" style="font-size:9pt"><thead><tr><th>S.No</th><th>Description</th><th>Qty</th><th>UoM</th><th>GST</th>' + vs.map(function (n) { return '<th>' + esc(r['vendor' + n]) + '<br><span style="font-weight:normal">Rate</span></th>'; }).join('') + '</tr></thead><tbody>' +
-    (r.lines || []).map(function (l, i) { return '<tr><td class="ct">' + (i + 1) + '</td><td>' + esc(l.item) + '</td><td class="ct">' + esc(l.qty) + '</td><td class="ct">' + esc(l.uom) + '</td><td class="ct">' + esc(l.gst) + '%</td>' + vs.map(function (n) { return '<td class="r' + (l.best === 'V' + n ? ' win' : '') + '">' + (l['r' + n] !== '' && l['r' + n] != null ? num(l['r' + n]).toFixed(2) : 'NQ') + '</td>'; }).join('') + '</tr>'; }).join('') +
-    '<tr class="b"><td colspan="5" class="r">Total incl. GST</td>' + vs.map(function (n) { return '<td class="r' + (r['vendor' + n] === r.l1Vendor ? ' win' : '') + '">' + num(r['tot' + n]).toFixed(2) + '</td>'; }).join('') + '</tr>' +
+    '<table class="t" style="font-size:9pt"><thead><tr><th>S.No</th><th>Description</th><th>Qty</th><th>UoM</th><th>GST</th>' + vs.map(function (n) { return '<th>' + esc(r['vendor' + n]) + (offTag(r, n) ? '<br><span style="font-weight:normal">' + esc(offTag(r, n)) + '</span>' : '') + '<br><span style="font-weight:normal">Rate</span></th>'; }).join('') + '</tr></thead><tbody>' +
+    secRows(r.lines, 5 + vs.length, function (l, i) { return '<tr><td class="ct">' + (i + 1) + '</td><td>' + esc(l.item) + '</td><td class="ct">' + esc(l.qty) + '</td><td class="ct">' + esc(l.uom) + '</td><td class="ct">' + esc(l.gst) + '%</td>' + vs.map(function (n) { return '<td class="r' + (l.best === 'V' + n ? ' win' : '') + '">' + (l['r' + n] !== '' && l['r' + n] != null ? num(l['r' + n]).toFixed(2) : 'NQ') + '</td>'; }).join('') + '</tr>'; }, function (sl, name) { return secSub(sl, vs, name, 5, true); }) +
+    '<tr class="b"><td colspan="5" class="r">Total incl. GST</td>' + vs.map(function (n) { return '<td class="r' + ((r.l1Col ? String(r.l1Col) === String(n) : r['vendor' + n] === r.l1Vendor) ? ' win' : '') + '">' + num(r['tot' + n]).toFixed(2) + '</td>'; }).join('') + '</tr>' +
     '<tr class="b"><td colspan="5" class="r">Ranking</td>' + (function () { var arr = vs.map(function (n) { return { n: n, t: num(r['tot' + n]) }; }).filter(function (x) { return x.t > 0; }).sort(function (a, b) { return a.t - b.t; }); return vs.map(function (n) { var k = arr.map(function (x) { return x.n; }).indexOf(n); return '<td class="ct">' + (k > -1 ? 'L' + (k + 1) : '-') + '</td>'; }).join(''); })() + '</tr></tbody></table>' +
     (x.po ? '<p class="b" style="margin-top:4mm;font-size:11pt">PO No: ' + esc(x.po.id) + ' dated ' + ddot(x.po.date) + '</p>' : '') +
-    '<p class="b" style="margin-top:4mm">Recommended vendor (L1): ' + esc(r.l1Vendor || '-') + (r.l1Total ? ' · ₹ ' + inr(r.l1Total, true) + ' (' + words(r.l1Total) + ')' : '') + '</p>' + (num(r.saving) ? '<p>Saving against L2: ₹ ' + inr(r.saving, true) + '</p>' : '') + (r.remarks ? '<p>Remarks: ' + nl(r.remarks) + '</p>' : '') +
+    '<p class="b" style="margin-top:4mm">Recommended vendor (L1): ' + esc(r.l1Vendor || '-') + (r.l1Col && offTag(r, r.l1Col) ? ' (' + esc(offTag(r, r.l1Col)) + ')' : '') + (r.l1Total ? ' · ₹ ' + inr(r.l1Total, true) + ' (' + words(r.l1Total) + ')' : '') + '</p>' + (num(r.saving) ? '<p>Saving against L2: ₹ ' + inr(r.saving, true) + '</p>' : '') + (r.remarks ? '<p>Remarks: ' + nl(r.remarks) + '</p>' : '') +
     '<p style="font-size:8.5pt;color:#444">NQ = not quoted. L1 is decided only among vendors who quoted every item. Highlighted = lowest rate per item.</p>' +
     '<table style="width:100%;margin-top:18mm"><tr><td class="b">Prepared by</td><td class="b ct">Checked by</td><td class="b r">Approved by</td></tr></table>';
   printHtml(body, { title: r.id, landscape: vs.length > 2 });
