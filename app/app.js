@@ -1112,7 +1112,7 @@ function renderDetail(e, res) {
     (ak.pending ? '<p class="note" style="margin-top:10px">Pending (' + ak.pending.length + '):</p><div>' + (ak.pending.map(function (n) { return '<span class="pchip">' + esc(n) + '</span>'; }).join('') || '<span class="note">Everyone has acknowledged.</span>') + '</div>' : '') +
     (ak.acks && ak.acks.length ? '<p class="note" style="margin-top:10px">Acknowledged:</p><div>' + ak.acks.map(function (a) { return '<span class="pchip" style="background:#E3F7EF">' + esc(a.name) + ' · ' + esc(a.at) + '</span>'; }).join('') + '</div>' : '') + '</div>'; }
   if (e.key === 'quotes') body += cmpTable(r);
-  var plain = e.fields.filter(function (f) { return !f.sec && f.t !== 'files' && f.t !== 'hidden' && f.k !== 'acks' && r[f.k] !== '' && r[f.k] != null && !(e.key === 'quotes' && /^(tot\d|vendor\d|off\d|l1Col)$/.test(f.k)); });
+  var plain = e.fields.filter(function (f) { return !f.sec && f.t !== 'files' && f.t !== 'hidden' && f.k !== 'acks' && r[f.k] !== '' && r[f.k] != null && !(e.key === 'quotes' && /^(tot\d|vendor\d|off\d|fr\d|l1Col)$/.test(f.k)); });
   var secF = e.fields.filter(function (f) { return f.sec && r[f.k] !== '' && r[f.k] != null; });
   body += '<div class="sec"><div class="kv">' + plain.map(function (f) { return '<div class="' + (f.t === 'textarea' ? 'wide' : '') + '"><span>' + esc(f.l) + '</span><b>' + fval(f, r[f.k]) + '</b></div>'; }).join('') + '</div></div>';
   if (e.lines && (r.lines || []).length && e.key !== 'quotes') {
@@ -1178,8 +1178,8 @@ function cmpTable(r) {
   var l1o = r.l1Col ? offTag(r, r.l1Col) : '';
   return '<div class="sec"><h4>Quotation comparison ' + (r.l1Vendor ? '<span class="badge b-ok">L1: ' + esc(r.l1Vendor) + (l1o ? ' (' + esc(l1o) + ')' : '') + ' · ' + inr(r.l1Total) + '</span>' : '') + (num(r.saving) ? '<span class="badge b-info">Saves ' + inr(r.saving) + ' vs L2</span>' : '') + '</h4><div style="overflow:auto"><table class="tb cmp"><thead><tr><th>#</th><th>Item</th><th class="num">Qty</th><th>UOM</th><th class="num">GST</th>' +
     vs.map(function (n) { return '<th class="num' + (win(n) ? ' l1' : '') + '">' + esc(r['vendor' + n]) + (offTag(r, n) ? '<div class="note">' + esc(offTag(r, n)) + '</div>' : '') + '</th>'; }).join('') + '</tr></thead><tbody>' +
-    secRows(r.lines, 5 + vs.length, function (l, i) { return '<tr><td>' + (i + 1) + '</td><td style="max-width:none;white-space:normal">' + esc(l.item) + '</td><td class="num">' + esc(l.qty) + '</td><td>' + esc(l.uom) + '</td><td class="num">' + esc(l.gst) + '%</td>' + vs.map(function (n) { return '<td class="v' + (l.best === 'V' + n ? ' win' : '') + '">' + (l['r' + n] !== '' && l['r' + n] != null ? inr(l['r' + n], true) : '<span class="note">no quote</span>') + '</td>'; }).join('') + '</tr>'; }, function (sl, name) { return secSub(sl, vs, name, 5, false); }) +
-    '</tbody><tfoot><tr><td colspan="5">Total incl. GST</td>' + vs.map(function (n) { return '<td class="num' + (win(n) ? ' win' : '') + '">' + inr(r['tot' + n]) + '</td>'; }).join('') + '</tr></tfoot></table></div><p class="note" style="margin-top:8px">Green = lowest rate per item. L1 counts only vendors who quoted every item.</p></div>';
+    secRows(r.lines, 5 + vs.length, function (l, i) { return '<tr><td>' + (i + 1) + '</td><td style="max-width:none;white-space:normal">' + esc(l.item) + '</td><td class="num">' + esc(l.qty) + '</td><td>' + esc(l.uom) + '</td><td class="num">' + esc(l.gst) + '%</td>' + vs.map(function (n) { return '<td class="v' + (l.best === 'V' + n ? ' win' : '') + '">' + (l['r' + n] !== '' && l['r' + n] != null ? inr(l['r' + n], true) + (l.best === 'V' + n ? ' <span class="badge b-ok">L1</span>' : '') : '<span class="note">no quote</span>') + '</td>'; }).join('') + '</tr>'; }, function (sl, name) { return secSub(sl, vs, name, 5, false); }) +
+    '</tbody><tfoot>' + (vs.some(function (n) { return num(r['fr' + n]) > 0; }) ? '<tr><td colspan="5">Freight / P&F</td>' + vs.map(function (n) { return '<td class="num">' + inr(num(r['fr' + n])) + '</td>'; }).join('') + '</tr>' : '') + '<tr><td colspan="5">Grand total incl. GST and freight</td>' + vs.map(function (n) { return '<td class="num' + (win(n) ? ' win' : '') + '">' + inr(r['tot' + n]) + '</td>'; }).join('') + '</tr></tfoot></table></div><p class="note" style="margin-top:8px">Green = lowest rate per item. L1 counts only vendors who quoted every item.</p></div>';
 }
 
 function related(title, rows, key, txt) { return '<div class="sec"><h4>' + title + '</h4><div class="list">' + rows.map(function (x) { return '<div class="li click" data-rel="' + key + '" data-id="' + esc(x.id) + '"><div class="t"><b>' + esc(x.id) + '</b><p>' + txt(x) + '</p></div>' + badge(x.status) + '</div>'; }).join('') + '</div></div>'; }
@@ -1261,7 +1261,7 @@ function openForm(key, rec, preset) {
   openDrawer('<div class="dh"><div><h2>' + (isNew ? 'New ' : 'Edit ') + esc(e.single.toLowerCase()) + (TCODE[key] && isNew ? ' <span class="badge b-mute">' + ({ po: 'ME21N', pr: 'ME51N', quotes: 'ME47', grn: 'MIGO', bills: 'MIRO', payments: 'F-53' }[key] || '') + '</span>' : '') + '</h2><div class="sub">' + (isNew ? esc(e.title) : esc(F.id)) + (preset && preset._copied ? ' · copied from ' + esc(preset._copied) : '') + '</div></div>' +
     (key === 'po' && isNew ? '<button class="btn soft sm" id="copyOld" style="margin-left:auto">' + icon('copy', 15) + 'Copy old PO</button>' : '') + '<button class="x" data-x' + (key === 'po' && isNew ? ' style="margin-left:8px"' : '') + '>×</button></div>' +
     '<div class="dbody"><div class="db"><div class="sec"><div class="fgrid" id="fg"></div></div>' +
-    (e.lines ? '<div class="sec"><h4>' + esc(e.lines.l) + (e.lines.fixed ? ' <small class="note">(from PO)</small>' : '') + '</h4><div style="overflow:auto"><table class="lines" id="ln"></table></div>' + (e.lines.fixed ? '' : '<button class="btn soft sm" id="addLn" style="margin-top:10px">' + icon('plus', 14) + 'Add line</button>') + (key === 'quotes' ? '<button class="btn soft sm" id="pullQ" style="margin:10px 0 0 8px">Fill rates from quotations</button>' : '') + '</div>' : '') +
+    (e.lines ? '<div class="sec"><h4>' + esc(e.lines.l) + (e.lines.fixed ? ' <small class="note">(from PO)</small>' : '') + '</h4><div style="overflow:auto"><table class="lines" id="ln"></table></div>' + (e.lines.fixed ? '' : '<button class="btn soft sm" id="addLn" style="margin-top:10px">' + icon('plus', 14) + 'Add line</button>') + (key === 'quotes' ? '<button class="btn soft sm" id="pullQ" style="margin:10px 0 0 8px">Fill rates from quotations</button><button class="btn soft sm" id="pullPR" style="margin:10px 0 0 8px">Pull items from Indent</button><button class="btn soft sm" id="xqBtn" style="margin:10px 0 0 8px">Extract from PDF</button><div class="note" id="xqNote" style="margin-top:8px"></div>' : '') + '</div>' : '') +
     '<div class="sec" id="routeSec" style="display:none"><div class="routebox"><h5>Approval channel — who approves this</h5><div id="routeBox"></div></div></div>' +
     '<div class="sec" id="calcBox" style="display:none"></div>' + (secName ? '<div class="sec"><h4>' + esc(secName) + '</h4><div class="fgrid" id="fg2"></div></div>' : '') + '</div>' +
     (hasAssist ? '<aside class="assist" id="assist"><h4>ASSIST</h4><div id="asv"></div><div id="asi"></div></aside>' : '') + '</div>' +
@@ -1276,10 +1276,73 @@ function openForm(key, rec, preset) {
   $('fSave').onclick = function () { saveForm(this, null); };
   if ($('fSubmit')) $('fSubmit').onclick = function () { saveForm(this, key === 'grn' ? 'post' : 'submit'); };
   if ($('pullQ')) $('pullQ').onclick = pullQuotes;
+  if ($('pullPR')) $('pullPR').onclick = pullIndent;
+  if ($('xqBtn')) $('xqBtn').onclick = extractPdf;
   if ($('addLn')) $('addLn').onclick = function () { F.lines.push(blankLine(e)); renderLines(); var t = $('ln').querySelectorAll('tbody tr'); var last = t[t.length - 1]; if (last) { var i = last.querySelector('input,select'); if (i) i.focus(); } };
   if ($('copyOld')) $('copyOld').onclick = copyOldModal;
   setTimeout(function () { var first = $('fg').querySelector('input:not([disabled]),select:not([disabled])'); if (first && window.innerWidth > 960) first.focus(); }, 350);
   if (window.PE_FORM_OPEN) try { PE_FORM_OPEN(key, F, isNew, setField); } catch (x) { }
+}
+function mergeQuoteLines(n, qlines) {
+  var added = 0, hit = 0;
+  (qlines || []).forEach(function (ql) {
+    var kk = qNorm(ql.item), ln = F.lines.filter(function (l) { return qNorm(l.item) === kk; })[0];
+    if (!ln) { ln = blankLine(F.e); ln.item = ql.item; ln.sec = ql.sec || ''; ln.hsn = ql.hsn || ''; ln.qty = ql.qty; ln.uom = ql.uom || ''; ln.gst = String(ql.gst || '18'); if (F.lines.length === 1 && !F.lines[0].item) F.lines[0] = ln; else F.lines.push(ln); added++; } else hit++;
+    ln['r' + n] = ql.rate; if (!ln.sec && ql.sec) ln.sec = ql.sec;
+  });
+  return { added: added, hit: hit };
+}
+function extractPdf() {
+  var vn = [1, 2, 3, 4].filter(function (n) { return F.rec['vendor' + n]; });
+  if (!vn.length) return toast('Pick the vendors first.');
+  var pick = function (col) {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/pdf,image/*';
+    inp.onchange = function () {
+      var f = inp.files[0]; if (!f) return; var b = $('xqBtn'); busy(b, true, 'Reading...');
+      aiPrep(f).then(function (file) { return call('aiExtract', S.token, 'quotes', { name: file.name, mime: file.mime, b64: file.b64 }); }).then(function (res) {
+        busy(b, false);
+        var d = res.data || {}, flags = (res.flags || []).slice();
+        if (res.vendor && res.vendor !== F.rec['vendor' + col]) flags.unshift('This PDF is from ' + res.vendor + ' but column V' + col + ' is ' + F.rec['vendor' + col] + '. Check the column.');
+        var m = mergeQuoteLines(col, res.lines);
+        if (d.offerRef && !F.rec['off' + col]) setField('off' + col, d.offerRef);
+        if (d.subject && !F.rec.subject) setField('subject', d.subject);
+        renderLines(); calcPreview();
+        $('xqNote').innerHTML = flags.length ? '<b>Check:</b><br>' + flags.map(esc).join('<br>') : '';
+        toast('V' + col + ': rates read for ' + (m.hit + m.added) + ' line(s)' + (m.added ? ', ' + m.added + ' new line(s) added' : '') + '. Please check and save.');
+      }).catch(function (x) { busy(b, false); fail(x); });
+    };
+    inp.click();
+  };
+  if (vn.length === 1) return pick(vn[0]);
+  var s = $('xqCol'); if (s) { var c0 = +s.value; s.remove(); return pick(c0); }
+  s = document.createElement('select'); s.id = 'xqCol'; s.className = 'in'; s.style.cssText = 'margin:10px 0 0 8px;max-width:240px';
+  s.innerHTML = vn.map(function (n) { return '<option value="' + n + '">For V' + n + ': ' + esc(F.rec['vendor' + n]) + (F.rec['off' + n] ? ' (' + esc(F.rec['off' + n]) + ')' : '') + '</option>'; }).join('');
+  $('xqBtn').insertAdjacentElement('afterend', s); toast('Choose the vendor column, then tap Extract from PDF again.');
+}
+function pullIndent() {
+  var b = $('pullPR'); if ($('prSel')) { $('prSel').remove(); return; }
+  busy(b, true);
+  call('listRecords', S.token, 'pr').then(function (res) {
+    busy(b, false);
+    var rows = (res.rows || []).filter(function (p) { return p.status === 'Approved'; });
+    if (!rows.length) return toast('No approved indents are waiting.');
+    var s = document.createElement('select'); s.id = 'prSel'; s.className = 'in'; s.style.cssText = 'display:block;margin-top:10px;max-width:100%';
+    s.innerHTML = '<option value="">Choose an approved indent...</option>' + rows.map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(p.id + ' | ' + String(p.purpose || '').slice(0, 50) + ' | ' + (p.project || '')) + '</option>'; }).join('');
+    b.parentNode.appendChild(s);
+    s.onchange = function () {
+      if (!s.value) return;
+      call('getRecord', S.token, 'pr', s.value).then(function (g) {
+        var p = g.rec; setField('prRef', p.id); if (!F.rec.subject) setField('subject', p.purpose || ''); if (p.project) setField('project', p.project); if (p.department) setField('department', p.department);
+        var n = 0; (p.lines || []).forEach(function (l) {
+          var it = findOpt('items', l.item) || {}, kk = qNorm(l.item);
+          if (F.lines.some(function (x) { return qNorm(x.item) === kk; })) return;
+          var ln = blankLine(F.e); ln.sec = l.sec || ''; ln.item = l.item; ln.hsn = it.hsn || ''; ln.qty = l.qty; ln.uom = l.uom || it.uom || ''; ln.gst = String(it.gst || '18');
+          if (F.lines.length === 1 && !F.lines[0].item) F.lines[0] = ln; else F.lines.push(ln); n++;
+        });
+        renderLines(); calcPreview(); s.remove(); toast(n + ' item(s) loaded from ' + p.id);
+      }).catch(function (x) { busy(b, false); fail(x); });
+    };
+  }).catch(function (x) { busy(b, false); fail(x); });
 }
 function qNorm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 function pullQuotes() {
@@ -1420,6 +1483,15 @@ function renderLines() {
     }).join('') + '</tbody>';
   $('ln').querySelectorAll('[data-c]').forEach(function (el) {
     var tr = el.closest('tr'), i = +tr.dataset.i, c = el.dataset.c;
+    var cdef = e.lines.cols.filter(function (z) { return z.k === c; })[0];
+    if (cdef && (cdef.t === 'money' || cdef.t === 'number') && !el.readOnly) el.addEventListener('paste', function (ev) {
+      var tx = String((ev.clipboardData || window.clipboardData).getData('text') || '').replace(/\s+$/, ''); if (!/[\r\n]/.test(tx)) return;
+      var vals = tx.split(/\r?\n/).map(function (s) { return s.split('\t')[0].replace(/[₹,\s]/g, ''); });
+      ev.preventDefault(); var done = 0;
+      vals.forEach(function (s, k) { if (s === '' || isNaN(+s) || !F.lines[i + k]) return; F.lines[i + k][c] = s; done++; });
+      renderLines(); calcPreview();
+      toast(done + ' value(s) pasted from row ' + (i + 1) + (vals.length > F.lines.length - i ? '. Copied list is longer than the lines: add more lines first.' : ''));
+    });
     var after = function () { var l = F.lines[i]; tr.querySelectorAll('[data-auto]').forEach(function (td) { td.textContent = lineAuto(td.dataset.auto, l); }); var rh = tr.querySelector('[data-rh]'); if (rh) rh.innerHTML = rateHint(l); calcPreview(); };
     if (el.dataset.ref) {
       bindCombo(el, function (v, o, typing) { F.lines[i][c] = v; if (c === 'item' && !typing) itemPicked(i, tr, v); after(); });
@@ -1475,9 +1547,9 @@ function calcPreview() {
     if (tot > S.sess.config.poLimit) rows.splice(3, 0, ['Approval', 'Dept Head + MD (above ' + inrShort(S.sess.config.poLimit) + ')']);
   }
   if (k === 'quotes') {
-    var tots = [1, 2, 3, 4].map(function (n) { if (!r['vendor' + n]) return null; var t = 0, full = true; F.lines.forEach(function (l) { var v = l['r' + n]; if (v === '' || v == null || !(num(v) > 0)) full = false; else t += num(l.qty) * num(v) * (1 + num(l.gst) / 100); }); return { v: r['vendor' + n], t: r2(t), full: full }; }).filter(Boolean);
+    var tots = [1, 2, 3, 4].map(function (n) { if (!r['vendor' + n]) return null; var b = 0, g = 0, full = true; F.lines.forEach(function (l) { var v = l['r' + n]; if (v === '' || v == null || !(num(v) > 0)) full = false; else { var am = num(l.qty) * num(v); b += am; g += am * num(l.gst) / 100; } }); var fr = num(r['fr' + n]); return { n: n, v: r['vendor' + n] + (r['off' + n] ? ' (' + r['off' + n] + ')' : ''), f: r2(fr), t: r2(b + g + fr), full: full }; }).filter(Boolean);
     var ok = tots.filter(function (x) { return x.full && x.t > 0; }).sort(function (a, b) { return a.t - b.t; });
-    rows = tots.map(function (x) { return [x.v + (ok[0] && ok[0].v === x.v ? '  ★ L1' : '') + (x.full ? '' : '  (incomplete)'), inr(x.t)]; });
+    rows = []; tots.forEach(function (x) { rows.push([x.v + (ok[0] && ok[0].n === x.n ? '  ★ L1' : '') + (x.full ? '' : '  (incomplete)'), inr(x.t)]); if (x.f) rows.push(['    of which freight / P&F', inr(x.f)]); });
     if (ok.length > 1) rows.push(['Saving vs L2', inr(ok[1].t - ok[0].t)]);
   }
   if (k === 'bills') { var t2 = r2(num(r.taxable) + num(r.cgst) + num(r.sgst) + num(r.igst)); var tds = num(r.tdsPct) > 0 ? r2(num(r.taxable) * num(r.tdsPct) / 100) : num(r.tds); rows = [['Invoice total', inr(t2)], ['TDS', inr(tds)], ['Net payable', inr(t2 - tds)]]; }
@@ -1913,7 +1985,7 @@ function printQuotes(r, x) {
   var body = '<p class="ct b u" style="font-size:12pt">QUOTATION COMPARISON STATEMENT</p><table style="width:100%;margin:4mm 0"><tr><td class="b">No: ' + esc(r.id) + '</td><td class="b">Subject: ' + esc(r.subject) + '</td><td class="b r">Date: ' + ddot(r.date) + '</td></tr><tr><td colspan="3">Project: ' + esc(r.project || '-') + (r.prRef ? ' · PR: ' + esc(r.prRef) : '') + '</td></tr></table>' +
     '<table class="t" style="font-size:9pt"><thead><tr><th>S.No</th><th>Description</th><th>Qty</th><th>UoM</th><th>GST</th>' + vs.map(function (n) { return '<th>' + esc(r['vendor' + n]) + (offTag(r, n) ? '<br><span style="font-weight:normal">' + esc(offTag(r, n)) + '</span>' : '') + '<br><span style="font-weight:normal">Rate</span></th>'; }).join('') + '</tr></thead><tbody>' +
     secRows(r.lines, 5 + vs.length, function (l, i) { return '<tr><td class="ct">' + (i + 1) + '</td><td>' + esc(l.item) + '</td><td class="ct">' + esc(l.qty) + '</td><td class="ct">' + esc(l.uom) + '</td><td class="ct">' + esc(l.gst) + '%</td>' + vs.map(function (n) { return '<td class="r' + (l.best === 'V' + n ? ' win' : '') + '">' + (l['r' + n] !== '' && l['r' + n] != null ? num(l['r' + n]).toFixed(2) : 'NQ') + '</td>'; }).join('') + '</tr>'; }, function (sl, name) { return secSub(sl, vs, name, 5, true); }) +
-    '<tr class="b"><td colspan="5" class="r">Total incl. GST</td>' + vs.map(function (n) { return '<td class="r' + ((r.l1Col ? String(r.l1Col) === String(n) : r['vendor' + n] === r.l1Vendor) ? ' win' : '') + '">' + num(r['tot' + n]).toFixed(2) + '</td>'; }).join('') + '</tr>' +
+    (vs.some(function (n) { return num(r['fr' + n]) > 0; }) ? '<tr class="b"><td colspan="5" class="r">Freight / P&amp;F</td>' + vs.map(function (n) { return '<td class="r">' + num(r['fr' + n]).toFixed(2) + '</td>'; }).join('') + '</tr>' : '') + '<tr class="b"><td colspan="5" class="r">Total incl. GST and freight</td>' + vs.map(function (n) { return '<td class="r' + ((r.l1Col ? String(r.l1Col) === String(n) : r['vendor' + n] === r.l1Vendor) ? ' win' : '') + '">' + num(r['tot' + n]).toFixed(2) + '</td>'; }).join('') + '</tr>' +
     '<tr class="b"><td colspan="5" class="r">Ranking</td>' + (function () { var arr = vs.map(function (n) { return { n: n, t: num(r['tot' + n]) }; }).filter(function (x) { return x.t > 0; }).sort(function (a, b) { return a.t - b.t; }); return vs.map(function (n) { var k = arr.map(function (x) { return x.n; }).indexOf(n); return '<td class="ct">' + (k > -1 ? 'L' + (k + 1) : '-') + '</td>'; }).join(''); })() + '</tr></tbody></table>' +
     (x.po ? '<p class="b" style="margin-top:4mm;font-size:11pt">PO No: ' + esc(x.po.id) + ' dated ' + ddot(x.po.date) + '</p>' : '') +
     '<p class="b" style="margin-top:4mm">Recommended vendor (L1): ' + esc(r.l1Vendor || '-') + (r.l1Col && offTag(r, r.l1Col) ? ' (' + esc(offTag(r, r.l1Col)) + ')' : '') + (r.l1Total ? ' · ₹ ' + inr(r.l1Total, true) + ' (' + words(r.l1Total) + ')' : '') + '</p>' + (num(r.saving) ? '<p>Saving against L2: ₹ ' + inr(r.saving, true) + '</p>' : '') + (r.remarks ? '<p>Remarks: ' + nl(r.remarks) + '</p>' : '') +
