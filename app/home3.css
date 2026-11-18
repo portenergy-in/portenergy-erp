@@ -33,7 +33,7 @@ body .main > .content { background: #F3F6FC; border-radius: 28px 0 0 0; min-heig
 html.pe-dark body .main > .content { background: #0B1226; }
 
 /* ---------- dashboard ---------- */
-.view.hx-on > :not(.hx) { display: none !important; }
+.view:has(> .hx) > :not(.hx) { display: none !important; }
 .hx { display: grid; gap: 20px; color: #0B1F5C; }
 .hx * { box-sizing: border-box; }
 .hx button { font-family: inherit; }
