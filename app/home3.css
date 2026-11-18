@@ -229,3 +229,6 @@ body #side::after { left: 0; right: 0; width: 100%; pointer-events: none; }
 
 body #side::after { top: auto !important; bottom: 0 !important; height: 260px; }
 body #side #nav { position: relative; z-index: 1; }
+
+body #side #meBtn { background: rgba(8, 27, 88, .82); border: 1px solid rgba(255,255,255,.14); }
+body #side #meBtn, body #side #meBtn * { color: #fff; }
