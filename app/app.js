@@ -1409,8 +1409,8 @@ function renderFields() {
     var k = el.dataset.k;
     if (el.classList.contains('multi')) { el.onchange = function (ev) { var ins = el.querySelectorAll('input'); if (ev && ev.target && ev.target.value === 'All' && ev.target.checked) ins.forEach(function (i) { if (i.value !== 'All') i.checked = false; }); else if (ev && ev.target && ev.target.checked) ins.forEach(function (i) { if (i.value === 'All') i.checked = false; }); F.rec[k] = Array.prototype.filter.call(ins, function (i) { return i.checked; }).map(function (i) { return i.value; }); onFieldChange(k); }; return; }
     if (el.dataset.ref) { bindCombo(el, function (v, o, typing) { F.rec[k] = v; if (!typing) onFieldChange(k); calcPreview(); }); return; }
-    var h = function () { F.rec[k] = el.value; onFieldChange(k); calcPreview(); };
-    el.addEventListener('input', h); el.addEventListener('change', h);
+    var h = function () { F.rec[k] = el.value; onFieldChange(k); calcPreview(); moneyWords(k); };
+    el.addEventListener('input', h); el.addEventListener('change', h); moneyWords(k);
   });
   e.fields.filter(function (f) { return f.t === 'files'; }).forEach(function (f) { renderFiles(f); });
 }
@@ -1537,6 +1537,11 @@ function lineAuto(k, l) {
   if (k === 'best') { var b = -1, br = Infinity; [1, 2, 3, 4].forEach(function (n) { var v = l['r' + n]; if (F.rec['vendor' + n] && v !== '' && v != null && num(v) > 0 && num(v) < br) { br = num(v); b = n; } }); return b > 0 ? String(F.rec['vendor' + b]).slice(0, 14) + (F.rec['off' + b] ? ' · ' + String(F.rec['off' + b]).slice(0, 10) : '') : ''; }
   return l[k] == null ? '' : l[k];
 }
+function moneyWords(k) {
+  if (!F || !F.e) return; var f = F.e.fields.filter(function (z) { return z.k === k; })[0]; if (!f || f.t !== 'money') return;
+  var h = $('pane').querySelector('.fgrid [data-hint="' + k + '"]'); if (!h) return; var v = num(F.rec[k]);
+  h.innerHTML = v > 0 ? '<b style="color:#0a7d4b">Rupees ' + esc(words(v)) + '</b>' + (f.hint ? '<br>' + esc(f.hint) : '') : (f.hint ? esc(f.hint) : '');
+}
 function calcPreview() {
   var box = $('calcBox'); if (!box || !F) return;
   var r = F.rec, k = F.key, rows = [];
@@ -1554,6 +1559,9 @@ function calcPreview() {
   }
   if (k === 'bills') { var t2 = r2(num(r.taxable) + num(r.cgst) + num(r.sgst) + num(r.igst)); var tds = num(r.tdsPct) > 0 ? r2(num(r.taxable) * num(r.tdsPct) / 100) : num(r.tds); rows = [['Invoice total', inr(t2)], ['TDS', inr(tds)], ['Net payable', inr(t2 - tds)]]; }
   if (k === 'clientbills') rows = [['Invoice total', inr(num(r.taxable) + num(r.gst))]];
+  if (k === 'vq') { var vs0 = 0, vg0 = 0; F.lines.forEach(function (l) { var a = r2(num(l.qty) * num(l.rate)); vs0 += a; vg0 += r2(a * num(l.gst) / 100); }); var vt0 = r2(vs0 + vg0 + num(r.freight)); rows = [['Subtotal', inr(vs0)], ['GST', inr(vg0)], ['Freight', inr(num(r.freight))], ['Grand total', inr(vt0)], ['In words', 'Rupees ' + words(vt0)]]; }
+  if (k === 'po' && rows.length) { var pt = rows.filter(function (x) { return x[0] === 'Grand total'; })[0]; if (pt) rows.push(['In words', 'Rupees ' + words(num(String(pt[1]).replace(/[^0-9.]/g, '')))]); }
+  if (k === 'bills' && rows.length && rows[0][0] === 'Invoice total') rows.push(['In words', 'Rupees ' + words(num(String(rows[0][1]).replace(/[^0-9.]/g, '')))]);
   if (k === 'vehicles' && r.endKm !== '' && r.startKm !== '') rows = [['Distance', r2(num(r.endKm) - num(r.startKm)) + ' km']];
   box.style.display = rows.length ? '' : 'none';
   box.innerHTML = '<div class="totals" style="max-width:none">' + rows.map(function (x) { return '<div><span>' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div>'; }).join('') + '</div>';
