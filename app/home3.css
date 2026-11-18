@@ -193,3 +193,11 @@ html.pe-dark .hx-kpi .t, html.pe-dark .hx-kpi .v { color: #E6ECFF; }
 .hx-pill { font-size: 11px; padding: 2px 9px; }
 .hx-act li { padding: 8px 0; font-size: 12.5px; }
 body .main > .content { padding-top: 18px; }
+
+/* performance: no always-running animations or blur layers on the app shell (keeps scrolling at 60 fps) */
+.amb, .amb i { animation: none !important; filter: none !important; }
+.pb-sheen, .pb-dust, .pb-runner, .dx-shine { animation: none !important; }
+body .main > .top, body #side, .main .glass, .bnav, .top .btn, .topfind { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+.hx-p, .hx-kpi, .hx-q button { transition: none; }
+.hx-kpi:hover, .hx-q button:hover { transition: box-shadow .12s; }
+body .main > .content { contain: layout style; }
