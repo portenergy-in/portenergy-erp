@@ -271,3 +271,8 @@ body.pe-nav-wait #peNavBar { opacity: 1; animation: peNavBar 1.6s cubic-bezier(.
 @keyframes peNavBar { from { transform: scaleX(.05); } to { transform: scaleX(.9); } }
 body.pe-nav-wait #content .view { opacity: .45; transition: opacity .15s; }
 body.pe-nav-wait #content { cursor: progress; }
+
+/* sign-in: the colour ring around the photo spins only while signing in */
+#login:has(#goBtn:disabled) .lgx-ring::before { animation: lgxSpin 1.1s linear infinite !important; will-change: transform; }
+#login:has(#goBtn:disabled) .lgx-ring::after { animation: lgxPulse 1.4s ease-out infinite !important; }
+@keyframes lgxSpin { to { transform: rotate(360deg); } }
