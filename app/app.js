@@ -24,7 +24,7 @@ function today() { return S.sess ? S.sess.today : new Date().toISOString().slice
 function debounce(fn, ms) { var t; return function () { var a = arguments, s = this; clearTimeout(t); t = setTimeout(function () { fn.apply(s, a); }, ms); }; }
 var MONEY_AUTO = ['subtotal', 'gstAmount', 'total', 'net', 'paid', 'balance', 'received', 'amount', 'gstAmt', 'lastRate', 'tot1', 'tot2', 'tot3', 'tot4', 'l1Total', 'saving'];
 var PCT_AUTO = ['receivedPct'];
-var TCODE = { po: 'ME23N', pr: 'ME53N', quotes: 'ME49', grn: 'MIGO', bills: 'MIR4', payments: 'F-53', vendors: 'XK03', items: 'MM03', clientbills: 'FB70', ledger: 'FBL1N', ageing: 'S_ALR', org: 'ORG' };
+var TCODE = { vq: 'ME41', po: 'ME23N', pr: 'ME53N', quotes: 'ME49', grn: 'MIGO', bills: 'MIR4', payments: 'F-53', vendors: 'XK03', items: 'MM03', clientbills: 'FB70', ledger: 'FBL1N', ageing: 'S_ALR', org: 'ORG' };
 
 /* ---------------- icons ---------------- */
 var IC = {
@@ -599,6 +599,8 @@ function CMDS() {
   add('ME23N', 'Purchase orders', function () { go({ v: 'list', k: 'po' }); }, see('po'));
   add('ME51N', 'Create purchase request', function () { openForm('pr'); }, can('pr'));
   add('ME53N', 'Indent (Purchase requests)', function () { go({ v: 'list', k: 'pr' }); }, see('pr'));
+  add('ME41N', 'Enter vendor quotation', function () { openForm('vq'); }, can('vq'));
+  add('ME41', 'Vendor quotations', function () { go({ v: 'list', k: 'vq' }); }, see('vq'));
   add('ME47', 'Create quotation comparison', function () { openForm('quotes'); }, can('quotes'));
   add('ME49', 'Quotation comparisons', function () { go({ v: 'list', k: 'quotes' }); }, see('quotes'));
   add('MIGO', 'Goods receipt against PO', function () { openForm('grn'); }, can('grn'));
@@ -1090,6 +1092,9 @@ function renderDetail(e, res) {
   if (res.canEdit) acts.push('<button class="btn soft" data-edit>Edit</button>');
   if (e.key === 'pr' && r.status === 'Approved') { if (can('po')) acts.push('<button class="btn primary" data-mk="po">Convert to Order</button>'); if (can('quotes')) acts.push('<button class="btn soft" data-mk="quotes">Compare quotations</button>'); }
   if (e.key === 'quotes' && r.status === 'Open' && can('po') && r.l1Vendor) acts.push('<button class="btn primary" data-mk="poL1">Create PO from L1 · ' + esc(r.l1Vendor) + (r.l1Col && offTag(r, r.l1Col) ? ' (' + esc(offTag(r, r.l1Col)) + ')' : '') + '</button>');
+  if (e.key === 'vq' && r.status === 'Active' && can('po')) acts.push('<button class="btn primary" data-mk="poVQ">Create PO from this quotation</button>');
+  if (e.key === 'vq' && can('quotes')) acts.push('<button class="btn soft" data-mk="qcVQ">Compare quotations</button>');
+  if (e.key === 'vq' && can('items')) { var newIt = (r.lines || []).filter(function (l) { return !findOpt('items', l.item); }); if (newIt.length) acts.push('<button class="btn soft" data-mk="itemVQ">Add ' + newIt.length + ' new item(s) to Item master</button>'); }
   if (e.key === 'po' && can('po')) acts.push('<button class="btn soft" data-mk="copy">' + icon('copy', 15) + 'Copy as new PO</button>');
   if (e.key === 'po' && ['Approved', 'Sent to Vendor', 'Partially Received'].indexOf(r.status) > -1 && can('grn')) acts.push('<button class="btn soft" data-mk="grn">Receive goods (MIGO)</button>');
   if (e.key === 'po' && ['Partially Received', 'Received', 'Closed'].indexOf(r.status) > -1 && can('bills')) acts.push('<button class="btn soft" data-mk="bills">Enter bill (MIRO)</button>');
@@ -1213,6 +1218,9 @@ function makeFrom(target, srcKey, r) {
   if (target === 'po') return openForm('po', null, { prRef: r.id, department: r.department, project: r.project, subject: 'Order for supply of ' + (r.purpose || ''), lines: poLinesFrom(r.lines) });
   if (target === 'quotes') return openForm('quotes', null, { prRef: r.id, department: r.department, project: r.project, subject: r.purpose || '', lines: (r.lines || []).map(function (l) { var it = findOpt('items', l.item) || {}; return { sec: l.sec || '', item: l.item, hsn: it.hsn || '', qty: l.qty, uom: l.uom || it.uom || '', gst: String(it.gst || '18') }; }) });
   if (target === 'poL1') { var n = +r.l1Col || [1, 2, 3, 4].filter(function (k) { return r['vendor' + k] === r.l1Vendor; })[0]; return openForm('po', null, { qcRef: r.id, prRef: r.prRef || '', vendor: r.l1Vendor, department: r.department, project: r.project, subject: 'Order for supply of ' + (r.subject || ''), lines: poLinesFrom(r.lines, 'r' + n) }); }
+  if (target === 'poVQ') return openForm('po', null, { vqRef: r.id, prRef: r.prRef || '', vendor: r.vendor, department: r.department, project: r.project, subject: 'Order for supply of ' + (r.subject || ''), quoteRef: [r.quoteNo, r.offerRef].filter(String).join(' / '), freight: r.freight || '', lines: poLinesFrom(r.lines, 'rate') });
+  if (target === 'qcVQ') return openForm('quotes', null, { prRef: r.prRef || '', department: r.department, project: r.project, subject: r.subject || '', vendor1: r.vendor, off1: r.offerRef || '', lines: (r.lines || []).map(function (l) { var o = { sec: l.sec || '', item: l.item, hsn: l.hsn || '', qty: l.qty, uom: l.uom || '', gst: String(l.gst || '18'), r1: l.rate }; return o; }) });
+  if (target === 'itemVQ') { var nl = (r.lines || []).filter(function (l) { return !findOpt('items', l.item); })[0]; if (nl) return openForm('items', null, { name: nl.item, uom: nl.uom || '', hsn: nl.hsn || '', gst: String(nl.gst || '18'), rate: nl.rate || '' }); return; }
   if (target === 'copy') return openForm('po', null, copyPoPreset(r));
   if (target === 'poV') return openForm('po', null, { vendor: r.name, paymentTerms: r.paymentTerms || '30 Days' });
   if (target === 'grn') return openForm('grn', null, { poRef: r.id });
@@ -1253,7 +1261,7 @@ function openForm(key, rec, preset) {
   openDrawer('<div class="dh"><div><h2>' + (isNew ? 'New ' : 'Edit ') + esc(e.single.toLowerCase()) + (TCODE[key] && isNew ? ' <span class="badge b-mute">' + ({ po: 'ME21N', pr: 'ME51N', quotes: 'ME47', grn: 'MIGO', bills: 'MIRO', payments: 'F-53' }[key] || '') + '</span>' : '') + '</h2><div class="sub">' + (isNew ? esc(e.title) : esc(F.id)) + (preset && preset._copied ? ' · copied from ' + esc(preset._copied) : '') + '</div></div>' +
     (key === 'po' && isNew ? '<button class="btn soft sm" id="copyOld" style="margin-left:auto">' + icon('copy', 15) + 'Copy old PO</button>' : '') + '<button class="x" data-x' + (key === 'po' && isNew ? ' style="margin-left:8px"' : '') + '>×</button></div>' +
     '<div class="dbody"><div class="db"><div class="sec"><div class="fgrid" id="fg"></div></div>' +
-    (e.lines ? '<div class="sec"><h4>' + esc(e.lines.l) + (e.lines.fixed ? ' <small class="note">(from PO)</small>' : '') + '</h4><div style="overflow:auto"><table class="lines" id="ln"></table></div>' + (e.lines.fixed ? '' : '<button class="btn soft sm" id="addLn" style="margin-top:10px">' + icon('plus', 14) + 'Add line</button>') + '</div>' : '') +
+    (e.lines ? '<div class="sec"><h4>' + esc(e.lines.l) + (e.lines.fixed ? ' <small class="note">(from PO)</small>' : '') + '</h4><div style="overflow:auto"><table class="lines" id="ln"></table></div>' + (e.lines.fixed ? '' : '<button class="btn soft sm" id="addLn" style="margin-top:10px">' + icon('plus', 14) + 'Add line</button>') + (key === 'quotes' ? '<button class="btn soft sm" id="pullQ" style="margin:10px 0 0 8px">Fill rates from quotations</button>' : '') + '</div>' : '') +
     '<div class="sec" id="routeSec" style="display:none"><div class="routebox"><h5>Approval channel — who approves this</h5><div id="routeBox"></div></div></div>' +
     '<div class="sec" id="calcBox" style="display:none"></div>' + (secName ? '<div class="sec"><h4>' + esc(secName) + '</h4><div class="fgrid" id="fg2"></div></div>' : '') + '</div>' +
     (hasAssist ? '<aside class="assist" id="assist"><h4>ASSIST</h4><div id="asv"></div><div id="asi"></div></aside>' : '') + '</div>' +
@@ -1267,10 +1275,41 @@ function openForm(key, rec, preset) {
   if (r.vendor && hasAssist) assistVendor(r.vendor, !!(preset && preset.vendor && !isNew));
   $('fSave').onclick = function () { saveForm(this, null); };
   if ($('fSubmit')) $('fSubmit').onclick = function () { saveForm(this, key === 'grn' ? 'post' : 'submit'); };
+  if ($('pullQ')) $('pullQ').onclick = pullQuotes;
   if ($('addLn')) $('addLn').onclick = function () { F.lines.push(blankLine(e)); renderLines(); var t = $('ln').querySelectorAll('tbody tr'); var last = t[t.length - 1]; if (last) { var i = last.querySelector('input,select'); if (i) i.focus(); } };
   if ($('copyOld')) $('copyOld').onclick = copyOldModal;
   setTimeout(function () { var first = $('fg').querySelector('input:not([disabled]),select:not([disabled])'); if (first && window.innerWidth > 960) first.focus(); }, 350);
   if (window.PE_FORM_OPEN) try { PE_FORM_OPEN(key, F, isNew, setField); } catch (x) { }
+}
+function qNorm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+function pullQuotes() {
+  var vn = [1, 2, 3, 4].filter(function (n) { return F.rec['vendor' + n]; });
+  if (!vn.length) return toast('Pick the vendors first.');
+  var b = $('pullQ'); busy(b, true);
+  call('listRecords', S.token, 'vq').then(function (res) {
+    var rows = res.rows || [], jobs = [], notes = [];
+    vn.forEach(function (n) {
+      var v = F.rec['vendor' + n], off = String(F.rec['off' + n] || '').trim().toLowerCase();
+      var c = rows.filter(function (q) { return q.vendor === v && q.status !== 'Rejected' && (!off || String(q.offerRef || '').trim().toLowerCase() === off); });
+      c.sort(function (a, z) { return (z.latest === 'Yes' ? 1 : 0) - (a.latest === 'Yes' ? 1 : 0) || String(z.date).localeCompare(String(a.date)); });
+      if (!c.length) { notes.push('V' + n + ': no quotation found'); return; }
+      jobs.push(call('getRecord', S.token, 'vq', c[0].id).then(function (g) { return { n: n, q: g.rec }; }));
+    });
+    return Promise.all(jobs).then(function (list) {
+      var added = 0;
+      list.forEach(function (o) {
+        var q = o.q, n = o.n; if (!F.rec['off' + n] && q.offerRef) setField('off' + n, q.offerRef);
+        (q.lines || []).forEach(function (ql) {
+          var kk = qNorm(ql.item), ln = F.lines.filter(function (l) { return qNorm(l.item) === kk; })[0];
+          if (!ln) { ln = blankLine(F.e); ln.item = ql.item; ln.sec = ql.sec || ''; ln.hsn = ql.hsn || ''; ln.qty = ql.qty; ln.uom = ql.uom || ''; ln.gst = String(ql.gst || '18'); if (F.lines.length === 1 && !F.lines[0].item) F.lines[0] = ln; else F.lines.push(ln); added++; }
+          ln['r' + n] = ql.rate; if (!ln.sec && ql.sec) ln.sec = ql.sec;
+        });
+        notes.push('V' + n + ': ' + q.id + (q.offerRef ? ' (' + q.offerRef + ')' : '') + ', ' + (q.lines || []).length + ' lines');
+      });
+      renderLines(); calcPreview(); busy(b, false);
+      toast(notes.join(' | ') + (added ? ' | ' + added + ' new line(s) added' : ''));
+    });
+  }).catch(function (x) { busy(b, false); fail(x); });
 }
 function blankLine(e) { var o = {}; e.lines.cols.forEach(function (c) { o[c.k] = c.def != null ? c.def : ''; }); return o; }
 function inputHtml(f, val, locked, attr) {
