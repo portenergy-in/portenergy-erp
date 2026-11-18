@@ -46,7 +46,7 @@
   }
 
   /* ---------- day / night inside the app (same switch as the sign-in page) ---------- */
-  function mode() { var m = null; try { m = localStorage.getItem('pe_lgmode'); } catch (x) { } if (m === 'day' || m === 'night') return m; var h = new Date().getHours(); return h >= 6 && h < 18 ? 'day' : 'night'; }
+  function mode() { var m = null; try { m = localStorage.getItem('pe_lgmode'); } catch (x) { } if (m === 'day' || m === 'night') return m; return 'day'; /* manual only: no auto night mode */ }
   function applyTheme() {
     var dark = mode() === 'night'; document.documentElement.classList.toggle('pe-dark', dark);
     var mc = document.querySelector('meta[name="theme-color"]'); if (mc) mc.setAttribute('content', dark ? '#060B24' : '#0084F0');
