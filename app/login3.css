@@ -108,8 +108,9 @@ html body #login .lgx-ic svg { width: 17px; height: 17px; }
 html body #login .lgx-hint { text-align: center; color: #6B7499 !important; font-size: 12px !important; margin-top: 12px !important; }
 
 /* ---------- PIN boxes (login3.js builds them around the real input) ---------- */
-.l3-pins { position: relative; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)) auto; gap: 8px; align-items: center; margin: 2px 0 6px; }
-.l3-pb { height: clamp(46px, 7.2vw, 58px); border-radius: 15px; display: grid; place-items: center; font: 700 22px Sora, Poppins, sans-serif; color: #0B1F5E;
+.l3-pins { position: relative; display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)) auto; gap: 12px; align-items: center; margin: 2px 0 6px; }
+.l3-pb.h { display: none; }
+.l3-pb { height: clamp(50px, 8vw, 62px); border-radius: 15px; display: grid; place-items: center; font: 700 22px Sora, Poppins, sans-serif; color: #0B1F5E;
   background: linear-gradient(180deg, #fff, #EBF1FF); border: 1.5px solid #D3DCF6;
   box-shadow: 0 7px 14px -9px rgba(31, 91, 255, .5), inset 0 -3px 6px rgba(31, 91, 255, .07);
   transition: border-color .18s, box-shadow .18s, transform .18s; }

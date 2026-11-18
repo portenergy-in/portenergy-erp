@@ -75,11 +75,14 @@
     function paint() {
       var v = inp.value || '';
       if (v === last && !paint.force) return; last = v; paint.force = false;
+      var n = Math.max(4, Math.min(6, v.length));          /* 4 boxes; a 5th / 6th appears only if the PIN is longer */
+      wrap.style.setProperty('--n', n);
       for (var j = 0; j < 6; j++) {
         var ch = v.charAt(j);
+        cells[j].classList.toggle('h', j >= n);
         cells[j].classList.toggle('f', !!ch);
         if (ch) cells[j].setAttribute('data-c', ch); else cells[j].removeAttribute('data-c');
-        cells[j].classList.toggle('on', focused && j === Math.min(v.length, 5));
+        cells[j].classList.toggle('on', focused && j === Math.min(v.length, n - 1));
       }
     }
     inp.addEventListener('input', paint);
