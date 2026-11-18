@@ -1,4 +1,4 @@
-// Port Energy ERP - Android app (Trusted Web Activity: opens the ERP in Chrome's engine, full screen)
+// Port Energy ERP - Android app (WebView launcher: opens the ERP full screen)
 plugins { id 'com.android.application' }
 
 def runNo = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as Integer
@@ -39,6 +39,4 @@ android {
     }
 }
 
-dependencies {
-    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
-}
+// no external libraries needed
