@@ -201,3 +201,14 @@ body .main > .top, body #side, .main .glass, .bnav, .top .btn, .topfind { -webki
 .hx-p, .hx-kpi, .hx-q button { transition: none; }
 .hx-kpi:hover, .hx-q button:hover { transition: box-shadow .12s; }
 body .main > .content { contain: layout style; }
+
+/* sidebar like the design: folded groups with chevrons, larger rows */
+body #side nav { padding: 0 12px; }
+body #side .ng { border: 0 !important; margin: 0 !important; padding: 0 !important; }
+body #side .ng::before, body #side .ng::after { display: none !important; }
+body #side .ngh { display: flex !important; align-items: center; justify-content: space-between; width: 100%; padding: 11px 14px !important; margin: 2px 0 !important; font-size: 14.5px !important; font-weight: 500 !important; letter-spacing: 0 !important; text-transform: none !important; color: #E3EAFF !important; background: transparent !important; border: 0 !important; border-radius: 12px; cursor: pointer; }
+body #side .ngh:hover { background: rgba(255, 255, 255, .09) !important; }
+body #side .ngh svg { width: 16px; height: 16px; stroke: #DCE6FF; opacity: .9; }
+body #side .ni { font-size: 14px !important; padding: 10px 14px !important; margin: 2px 0; }
+body #side .ng:not(.closed) .items { padding: 0 0 6px 8px; }
+body #side .ni svg { width: 19px; height: 19px; }
