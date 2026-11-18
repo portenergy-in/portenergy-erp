@@ -142,6 +142,7 @@
   }
 
   function build() {
+    tidyNav();
     var c = $('content'); if (!c) return;
     var v = c.querySelector('.view');
     var isHome = !!(v && v.querySelector('.hero2'));
@@ -171,11 +172,26 @@
     }
   }
 
+  /* sidebar: group names in normal case, groups folded by default (like the design); a person's own open/close choice is kept afterwards */
+  function tidyNav() {
+    var n = $('nav'); if (!n || !n.querySelector('.ng')) return;
+    n.querySelectorAll('.ngh').forEach(function (b) {
+      var tn = b.firstChild; if (!tn || tn.nodeType !== 3) return;
+      var s = tn.nodeValue.trim();
+      if (s && s === s.toUpperCase()) tn.nodeValue = s.toLowerCase().replace(/(^|[\s&])([a-z])/g, function (m, a, c) { return a + c.toUpperCase(); });
+    });
+    var done = false; try { done = localStorage.getItem('pe_ng_init5') === '1'; } catch (x) { }
+    if (!done) {
+      n.querySelectorAll('.ng[data-g]:not(.closed) .ngh').forEach(function (b) { b.click(); });
+      try { localStorage.setItem('pe_ng_init5', '1'); } catch (x) { }
+    }
+  }
+
   var tm = null;
   function soon() { clearTimeout(tm); tm = setTimeout(build, 80); }
   var c0 = $('content');
   if (c0) new MutationObserver(soon).observe(c0, { childList: true, subtree: true });
-  setInterval(function () { var v = c0 && c0.querySelector('.view'); if (v && v.querySelector('.hero2') && !v.querySelector('.hx')) build(); }, 1200);
+  setInterval(function () { tidyNav(); var v = c0 && c0.querySelector('.view'); if (v && v.querySelector('.hero2') && !v.querySelector('.hx')) build(); }, 1200);
   [300, 900, 1800, 3500].forEach(function (t) { setTimeout(build, t); });
   window.addEventListener('load', soon);
 })();
