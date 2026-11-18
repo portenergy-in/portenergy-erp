@@ -226,3 +226,6 @@ body #side::after { height: 300px; bottom: 0; opacity: 1; }
 @media (max-width: 640px) { .hx-k { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .hx-kpi { padding: 12px 10px; gap: 8px; } .hx-kpi .ico { width: 34px; height: 34px; flex: none; } .hx-kpi .ico svg { width: 20px; height: 20px; } .hx-kpi .ch { display: none; } .hx-kpi .v { font-size: 19px; } .hx-kpi .tx { min-width: 0; } .hx-kpi .s { font-size: 10.5px; } .hx-hero { padding: 18px 16px; } .hx-hero h2 { font-size: 22px; } }
 
 body #side::after { left: 0; right: 0; width: 100%; pointer-events: none; }
+
+body #side::after { top: auto !important; bottom: 0 !important; height: 260px; }
+body #side #nav { position: relative; z-index: 1; }
