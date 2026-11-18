@@ -252,3 +252,12 @@ body .main > .top { transform: translateZ(0); }
 html.pe-lite *, html.pe-lite *::before, html.pe-lite *::after { animation: none !important; transition: none !important; }
 html.pe-lite .hx-p, html.pe-lite .hx-kpi, html.pe-lite .hx-hero { box-shadow: none !important; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* sign-in button: smooth progress feel (transform/opacity only, GPU friendly) */
+#goBtn:disabled { position: relative; overflow: hidden; }
+#goBtn:disabled::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.4) 50%, transparent 70%); transform: translateX(-100%); animation: peSign 1.15s cubic-bezier(.4, 0, .2, 1) infinite; will-change: transform; }
+#goBtn:disabled::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.9); transform-origin: left center; transform: scaleX(.04); animation: peProg 2.8s cubic-bezier(.2, .8, .2, 1) forwards; }
+#goBtn:disabled .spin { animation: peSpin .75s linear infinite; will-change: transform; }
+@keyframes peSign { to { transform: translateX(100%); } }
+@keyframes peProg { to { transform: scaleX(.92); } }
+@keyframes peSpin { to { transform: rotate(360deg); } }
