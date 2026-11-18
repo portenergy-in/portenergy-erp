@@ -87,7 +87,7 @@ document.addEventListener('pointerdown', function (e) {
 });
 function countUp(el) {
   var to = num(el.dataset.n), fmt = el.dataset.f, t0 = performance.now(), dur = 750;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = fmt === 'inr' ? inrShort(to) : Math.round(to); return; }
+  { el.textContent = fmt === 'inr' ? inrShort(to) : Math.round(to); return; }   /* dashboard numbers appear instantly - no count-up animation (Nov 2026) */
   (function step(t) { var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3), v = to * e; el.textContent = fmt === 'inr' ? inrShort(v) : Math.round(v); if (k < 1) requestAnimationFrame(step); })(t0);
 }
 
@@ -952,7 +952,7 @@ function viewMode(e) {
   if (e.key === 'photos') return 'table';
   if (window.innerWidth <= 900) return 'cards';
   var money = e.list.filter(function (k) { return isMoney(colDef(e, k)); }).length;
-  return money && e.list.length > 5 ? 'table' : 'cards';
+  return 'table';   /* compact table is the default on desktop; cards stay on phone (Nov 2026) */
 }
 function recCard(e, r, i, cols) {
   var used = { id: 1, status: 1 }, title = null, people = [], dates = [], money = [], tags = [];
