@@ -202,6 +202,6 @@
 
 ;(function(){try{var c=document.getElementById('content')||document.querySelector('.main > .content');if(!c)return;var bar=document.createElement('i');bar.id='peNavBar';document.body.appendChild(bar);var failT=0,quietT=0,t0=0;
 function off(){clearTimeout(failT);clearTimeout(quietT);document.body.classList.remove('pe-nav-wait');}
-function on(){t0=Date.now();document.body.classList.remove('pe-nav-wait');void bar.offsetWidth;document.body.classList.add('pe-nav-wait');clearTimeout(failT);failT=setTimeout(off,7000);}
+function on(){t0=Date.now();document.body.classList.remove('pe-nav-wait');void bar.offsetWidth;document.body.classList.add('pe-nav-wait');clearTimeout(failT);failT=setTimeout(off,7000);clearTimeout(quietT);quietT=setTimeout(off,650);}
 document.addEventListener('click',function(e){var el=e.target.closest&&e.target.closest('#nav .ni, .bnav button, .bnav a');if(el&&!el.classList.contains('on'))on();},true);
-new MutationObserver(function(){if(!document.body.classList.contains('pe-nav-wait')||Date.now()-t0<150)return;clearTimeout(quietT);quietT=setTimeout(off,280);}).observe(c,{childList:true,subtree:true});}catch(e){}})();
+new MutationObserver(function(){if(!document.body.classList.contains('pe-nav-wait'))return;clearTimeout(quietT);quietT=setTimeout(off,450);}).observe(c,{childList:true,subtree:true});}catch(e){}})();
