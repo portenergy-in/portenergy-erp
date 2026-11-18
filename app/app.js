@@ -92,7 +92,12 @@ function countUp(el) {
 }
 
 function ent(k) { return S.sess && (S.sess.entities || []).filter(function (e) { return e.key === k; })[0] || null; }
-function fld(e, k) { return e.fields.filter(function (f) { return f.k === k; })[0]; }
+function fld(e, k) {
+  var f = e.fields.filter(function (f) { return f.k === k; })[0];
+  // Office stock quantities (balance, in, out) are units, not rupees
+  if (f && e.key === 'stock' && f.t === 'auto' && MONEY_AUTO.indexOf(f.k) > -1) { f = Object.assign({}, f, { t: 'number' }); }
+  return f;
+}
 function statusCls(s) {
   s = String(s || '');
   if (/^(Approved|Paid|Received|Posted|Completed|Reimbursed|Verified|PO Created|Published|Reviewed)$/.test(s)) return 'b-ok';
