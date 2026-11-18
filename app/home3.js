@@ -195,3 +195,5 @@
   [300, 900, 1800, 3500].forEach(function (t) { setTimeout(build, t); });
   window.addEventListener('load', soon);
 })();
+
+;(function(){document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('#refreshBtn');if(!b)return;e.preventDefault();e.stopImmediatePropagation();b.disabled=true;b.style.opacity='.6';var go=false;var done=function(){if(go)return;go=true;location.replace(location.pathname+'?r='+Date.now()+location.hash);};var p=[];try{if(window.caches)p.push(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k);}));}));}catch(x){}try{if(navigator.serviceWorker)p.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));}));}catch(x){}Promise.all(p).then(done,done);setTimeout(done,2500);},true);})();
