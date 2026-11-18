@@ -50,9 +50,10 @@
       h += '<div style="font-weight:800;font-size:19px">' + esc(r.title) + '</div><div style="color:#7A86B0;font-size:12px;margin:2px 0 12px">Updated ' + esc(r.date) + '</div>';
       r.items.forEach(function (x) { h += '<div style="display:flex;gap:11px;margin:0 0 12px"><div style="font-size:24px;line-height:1.1">' + x.i + '</div><div><b>' + esc(x.t) + '</b><div style="color:#4a557f;font-size:14px">' + esc(x.d) + '</div></div></div>'; });
     });
-    h += '<button id="peWnOk" style="width:100%;margin-top:6px;background:linear-gradient(100deg,#0084F0,#F0006C);color:#fff;border:0;border-radius:12px;padding:12px;font-weight:700;font-size:15px">Got it</button></div>';
+    h += '<button id="peWnOk" style="width:100%;margin-top:6px;background:linear-gradient(100deg,#0084F0,#F0006C);color:#fff;border:0;border-radius:12px;padding:12px;font-weight:700;font-size:15px">Got it</button><button id="peWnAll" style="width:100%;margin-top:8px;background:#fff;color:#0084F0;border:0;font-weight:700;font-size:14px;padding:8px">See all updates and how to use them</button></div>';
     b.innerHTML = h; document.body.appendChild(b);
-    document.getElementById('peWnOk').onclick = function () { try { localStorage.setItem(KEY, RELEASES[0].id); } catch (x) { } b.remove(); };
+    document.getElementById('peWnOk').onclick = function () { try { localStorage.setItem(KEY, RELEASES[0].id); } catch (x) { } b.remove(); try { navItem(); } catch (x) { } };
+    document.getElementById('peWnAll').onclick = function () { b.remove(); try { P().go({ v: 'whatsnew' }); } catch (x) { } };
   }
   function check() {
     var p = P(); if (!p || !p.S || !p.S.sess) return;
@@ -61,7 +62,40 @@
     if (document.getElementById('pePushBar')) return setTimeout(check, 4000);   // let the notification question come first
     setTimeout(function () { if (!document.getElementById('pePushBar') && !document.getElementById('peDob')) show(); else setTimeout(check, 4000); }, 3500);
   }
+  var HOW = {
+    '2026-11-18': { go: { v: 'list', k: 'quotes' }, goLabel: 'Open Quotation Comparison', steps: ['Open Procurement > Quotation Comparison and tap New.', 'Pick the vendors. The same vendor can sit in two columns: give each column its own offer ref, for example 5403-B and 5403-C.', 'Type a Section on each line, for example Hot Dip or Machinery, then enter the rates.', 'Save. The comparison, the print and the PO show a heading and a subtotal for every section.', 'Create PO from L1 keeps the winning offer and its sections.'] },
+    '2026-11-17c': { steps: ['Tap the PEPL AI button.', 'Attach a quotation, invoice or GST certificate.', 'Type what you need, for example: fill this vendor form.', 'Watch the form fill. Check it, then press Save. The AI never saves for you.'] },
+    '2026-11-17b': { steps: ['Open PEPL AI and attach the document.', 'Say what to fill. The AI reads it and opens the right form.', 'Check every field, then press Save.'] },
+    '2026-11-16': { steps: ['Tap Allow when the app asks about notifications, one time.', 'Open System > My Team and tick your regular team members.', 'Add your date of birth when asked, one time only.'] }
+  };
+  function pageSeen() { try { localStorage.setItem(KEY, RELEASES[0].id); } catch (x) { } }
+  function isNew() { var s = ''; try { s = localStorage.getItem(KEY) || ''; } catch (x) { } return s !== RELEASES[0].id; }
+  function page(v) {
+    P().setTitle('What\'s new', 'Every update to Port Energy ERP');
+    var h = '<div class="glass panel" style="max-width:780px"><p class="note" style="margin-top:0">All updates, newest first. Tap an update to see what changed and how to use it.</p>';
+    RELEASES.forEach(function (r, i) {
+      var w = HOW[r.id] || {};
+      h += '<details style="border:1px solid #E2E8F5;border-radius:14px;padding:12px 14px;margin:0 0 10px;background:#fff"' + (i === 0 ? ' open' : '') + '><summary style="cursor:pointer"><b style="font-size:16px">' + esc(r.title) + '</b>' + (i === 0 ? ' <span class="badge b-ok">Latest</span>' : '') + '<div class="note">' + esc(r.date) + '</div></summary><div style="margin-top:12px">';
+      r.items.forEach(function (x) { h += '<div style="display:flex;gap:11px;margin:0 0 10px"><div style="font-size:22px;line-height:1.1">' + x.i + '</div><div><b>' + esc(x.t) + '</b><div class="note">' + esc(x.d) + '</div></div></div>'; });
+      if (w.steps) h += '<div style="background:#F3F6FF;border-radius:12px;padding:10px 14px;margin-top:6px"><b>How to use</b><ol style="margin:6px 0 0;padding-left:20px">' + w.steps.map(function (s) { return '<li style="margin:3px 0">' + esc(s) + '</li>'; }).join('') + '</ol>' + (w.go ? '<button class="btn primary" style="margin-top:10px" data-go="' + esc(JSON.stringify(w.go)) + '">' + esc(w.goLabel || 'Open') + '</button>' : '') + '</div>';
+      h += '</div></details>';
+    });
+    v.innerHTML = h + '</div>';
+    v.querySelectorAll('[data-go]').forEach(function (b) { b.onclick = function () { try { P().go(JSON.parse(b.dataset.go)); } catch (x) { } }; });
+    pageSeen();
+  }
+  window.PE_VIEWS = window.PE_VIEWS || {};
+  window.PE_VIEWS.whatsnew = page;
+  function navItem() {
+    var p = P(); if (!p || !p.$) return; var nav = p.$('nav'); if (!nav) return;
+    var g = nav.querySelector('.ng[data-g="System"]'); var box = g && g.querySelector('.items > div'); if (!box) return;
+    var old = box.querySelector('[data-v="whatsnew"]'); if (old) old.remove();
+    var b = document.createElement('button'); b.className = 'ni'; b.dataset.v = 'whatsnew';
+    b.innerHTML = p.icon('pulse') + 'What\'s new' + (isNew() ? '<span class="tc" style="background:#F0006C;color:#fff;border-radius:8px;padding:1px 7px">NEW</span>' : '');
+    b.onclick = function () { p.closeSide(); p.go({ v: 'whatsnew' }); };
+    box.insertBefore(b, box.firstChild);
+  }
   var prev = window.PE_NAV;
-  window.PE_NAV = function () { if (prev) try { prev(); } catch (x) { } check(); };
+  window.PE_NAV = function () { if (prev) try { prev(); } catch (x) { } try { navItem(); } catch (x) { } check(); };
   window.PE_WHATSNEW = { show: show, releases: RELEASES };
 })();
