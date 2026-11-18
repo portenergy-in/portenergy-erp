@@ -4,6 +4,11 @@
 (function () {
   'use strict';
   var RELEASES = [
+    { id: '2026-11-18', date: '18 Nov 2026', title: 'Quotations: same vendor, sections', items: [
+      { i: '📑', t: 'Many offers from one vendor', d: 'Put the same vendor in two columns of a Quotation Comparison. Give each column its own offer ref, for example 5403-B and 5403-C.' },
+      { i: '🧱', t: 'Sections with subtotals', d: 'Add a Section to each line, for example Hot Dip or Machinery. The comparison, the PO and the printouts show a heading and a subtotal for each section.' },
+      { i: '🏆', t: 'PO from the right offer', d: 'Create PO from L1 now picks the winning offer and keeps its sections.' }
+    ] },
     { id: '2026-11-17c', date: '17 Nov 2026', title: 'PEPL Intelligence now works for you', items: [
       { i: '🤖', t: 'AI operates the ERP', d: 'Tell the AI what you need. It opens the form and fills it while you watch.' },
       { i: '📎', t: 'Attach and say', d: 'Attach a quotation, invoice or GST certificate and say what to do, for example: fill this vendor form.' },
