@@ -1,0 +1,222 @@
+/* © 2026 Port Energy Private Limited. All rights reserved.
+   PORT ENERGY ERP - login v3: bright 3D glass card on a refinery / pipeline / port photo.
+   Loaded LAST (after home3.css). Everything is transform / opacity only, so it stays smooth on 120 Hz screens.
+   Delete this file + its <link> + login3.js to go back to login-lux.css. */
+
+@property --l3a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+
+/* ---------- page ---------- */
+html body #login {
+  background: #EAF2FF url(login-bg-d.webp) center bottom / cover no-repeat !important;
+  color: #14205E !important;
+  padding: clamp(18px, 3.4vh, 40px) clamp(20px, 4.4vw, 72px) 14px !important;
+  grid-template-rows: auto 1fr auto !important;
+  gap: 0 !important;
+}
+html body #login .lg-bg, html body #login .lg-scene { display: none !important; }
+html body #login .lg-svc, html body #login .lg-copy, html body #login .lg-stats { display: none !important; }
+
+/* ---------- logo + product name (top-left) ---------- */
+html body #login .lg-top { display: flex !important; flex-direction: column; align-items: flex-start; gap: 8px; border: 0 !important; padding: 0 !important; background: none !important; }
+html body #login .lg-logo { background: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
+html body #login .lg-logo img { height: clamp(58px, 10vh, 100px) !important; width: auto; display: block; }
+html body #login .lg-top::after {
+  content: "Enterprise Operations Platform (ERP)";
+  font: 600 clamp(13px, 1.2vw, 17px)/1.2 Sora, Poppins, system-ui, sans-serif; letter-spacing: .05em;
+  background: linear-gradient(90deg, #14247F, #1F5BFF 55%, #E8248F); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* ---------- layout: card on the right ---------- */
+html body #login .lg-main {
+  display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(360px, 440px) !important;
+  align-items: center !important; padding-top: 0 !important; perspective: 1400px;
+}
+html body #login .lg-card { grid-column: 2 !important; justify-self: end; margin-right: clamp(0px, 3.2vw, 70px); }
+
+/* ---------- the 3D glass card ---------- */
+html body #login .lg-card {
+  position: relative; width: 100%; max-width: 440px !important;
+  padding: 58px 32px 20px !important; border-radius: 32px !important;
+  background: none !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important;
+  color: #14205E; isolation: isolate;
+  transform: perspective(1400px) rotateX(var(--l3rx, 0deg)) rotateY(var(--l3ry, 0deg)) !important;
+  transform-origin: 50% 50%; will-change: transform;
+  visibility: visible !important; opacity: 1 !important; overflow: visible !important;
+}
+/* glowing gradient rim (turns slowly) */
+html body #login .lg-card::before {
+  content: ""; display: block !important; position: absolute; left: -3px; right: -3px; top: -3px; bottom: -3px; width: auto; height: auto; z-index: -2; border-radius: 35px; pointer-events: none;
+  background: conic-gradient(from var(--l3a), #1F5BFF, #22C3FF, #E8248F, #7B3FF2, #1F5BFF); background-size: auto;
+  box-shadow: 0 46px 80px -34px rgba(31, 91, 255, .55), 0 22px 44px -24px rgba(232, 36, 143, .4), 0 0 70px -14px rgba(34, 195, 255, .45);
+  animation: l3rim 9s linear infinite !important;
+}
+/* glass face: light follows the pointer */
+html body #login .lg-card::after {
+  content: ""; display: block !important; position: absolute; left: 0; right: 0; top: 0; bottom: 0; width: auto; height: auto; z-index: -1; border-radius: 32px; pointer-events: none;
+  background:
+    radial-gradient(360px circle at var(--l3gx, 25%) var(--l3gy, 0%), rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 62%),
+    radial-gradient(280px 200px at 100% 100%, rgba(232, 36, 143, .10), transparent 70%),
+    radial-gradient(300px 220px at 0% 0%, rgba(34, 195, 255, .14), transparent 70%),
+    linear-gradient(165deg, #fff 0%, #F4F8FF 55%, #E9F1FF 100%);
+  box-shadow: inset 0 1.5px 0 #fff, inset 0 -26px 50px -34px rgba(31, 91, 255, .25);
+}
+@keyframes l3rim { to { --l3a: 360deg; } }
+html body #login .lg-card > * { position: relative; z-index: 1; }
+
+/* floating shield badge */
+.l3-badge { position: absolute !important; left: 50%; top: -38px; width: 76px; height: 76px; margin-left: -38px; z-index: 3 !important; transform: translate3d(var(--l3bx, 0px), var(--l3by, 0px), 0); will-change: transform; pointer-events: none; }
+.l3-bi { position: absolute; inset: 0; border-radius: 50%; display: grid; place-items: center; color: #fff;
+  background: radial-gradient(circle at 30% 22%, #8BE3FF 0%, #1F9BFF 38%, #1F5BFF 62%, #14247F 100%);
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, .95), 0 0 0 8px rgba(34, 195, 255, .35), 0 18px 30px -8px rgba(31, 91, 255, .7), inset 0 -8px 14px rgba(8, 20, 110, .35), inset 0 6px 10px rgba(255, 255, 255, .45);
+  animation: l3float 5s ease-in-out infinite !important; }
+.l3-bi svg { width: 36px; height: 36px; filter: drop-shadow(0 3px 4px rgba(8, 20, 110, .4)); }
+.l3-bi::before { content: ""; position: absolute; inset: -9px; border-radius: 50%; border: 2.5px solid transparent; border-top-color: #E8248F; border-right-color: rgba(232, 36, 143, .35); animation: l3spin 6s linear infinite !important; }
+@keyframes l3float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes l3spin { to { transform: rotate(360deg); } }
+html body #login.lg-who .l3-badge { display: none !important; }
+html body #login.lg-who .lg-card { padding-top: 24px !important; }
+
+/* ---------- heading ---------- */
+html body #login .lg-cardlogo, html body #login .orb, html body #login .lg-sub { display: none !important; }
+html body #login .lg-wb {
+  font: 800 clamp(28px, 2.3vw, 34px)/1.1 Sora, Poppins, system-ui, sans-serif !important; letter-spacing: -.02em !important;
+  text-transform: none !important; color: #0B1F5E !important; text-align: center; margin: 0 !important;
+}
+html body #login .lg-wb::after { content: "Sign in to continue"; display: block; margin-top: 8px; font: 500 15px Poppins, system-ui, sans-serif; letter-spacing: 0; color: #6B7499; }
+html body #login .lg-h { font-size: 0 !important; line-height: 0; height: 3px; width: 64px; margin: 16px auto 20px !important; border-radius: 3px; overflow: hidden;
+  background: linear-gradient(90deg, #1F5BFF, #E8248F) !important; color: transparent !important; -webkit-text-fill-color: transparent !important; }
+html body #login.lg-who .lg-wb, html body #login.lg-who .lg-h { display: none !important; }
+
+/* ---------- fields ---------- */
+html body #login label.f { display: block; font: 700 13px Poppins, system-ui, sans-serif !important; color: #14247F !important; margin: 0 0 8px !important; letter-spacing: .01em; }
+html body #login .lgx-in input, html body #login .lg-card .in {
+  height: 56px; padding: 0 16px 0 58px !important; border-radius: 18px !important; font: 500 16px Poppins, system-ui, sans-serif !important;
+  background: linear-gradient(180deg, #F2F6FF, #E8EFFF) !important; color: #0B1F5E !important; -webkit-text-fill-color: #0B1F5E !important;
+  border: 1.5px solid #D3DCF6 !important; box-shadow: inset 0 2px 4px rgba(20, 36, 127, .07) !important;
+  transition: border-color .2s, box-shadow .2s, transform .2s !important;
+}
+html body #login .lgx-in input:focus, html body #login .lg-card .in:focus {
+  border-color: #22C3FF !important; background: #fff !important; transform: translateY(-1px);
+  box-shadow: 0 0 0 4px rgba(34, 195, 255, .22), 0 12px 26px -12px rgba(31, 91, 255, .6) !important;
+}
+html body #login .lgx-ic {
+  left: 11px !important; width: 34px; height: 34px; margin-top: -17px; top: 50% !important; transform: none !important; border-radius: 50%; display: grid !important; place-items: center;
+  background: linear-gradient(135deg, #1F5BFF, #22C3FF); color: #fff !important; box-shadow: 0 6px 12px -5px rgba(31, 91, 255, .8);
+}
+html body #login .lgx-ic { z-index: 2; pointer-events: none; }
+html body #login .lgx-ic svg { width: 17px; height: 17px; }
+html body #login .lgx-hint { text-align: center; color: #6B7499 !important; font-size: 12px !important; margin-top: 12px !important; }
+
+/* ---------- PIN boxes (login3.js builds them around the real input) ---------- */
+.l3-pins { position: relative; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)) auto; gap: 8px; align-items: center; margin: 2px 0 6px; }
+.l3-pb { height: clamp(46px, 7.2vw, 58px); border-radius: 15px; display: grid; place-items: center; font: 700 22px Sora, Poppins, sans-serif; color: #0B1F5E;
+  background: linear-gradient(180deg, #fff, #EBF1FF); border: 1.5px solid #D3DCF6;
+  box-shadow: 0 7px 14px -9px rgba(31, 91, 255, .5), inset 0 -3px 6px rgba(31, 91, 255, .07);
+  transition: border-color .18s, box-shadow .18s, transform .18s; }
+.l3-pb.f::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #7FDCFF, #1F5BFF 70%); box-shadow: 0 2px 5px rgba(31, 91, 255, .45); }
+.l3-pins.rev .l3-pb.f::after { display: none; }
+.l3-pins.rev .l3-pb.f::before { content: attr(data-c); }
+.l3-pb.on { border-color: #22C3FF; transform: translateY(-3px); box-shadow: 0 0 0 4px rgba(34, 195, 255, .22), 0 14px 24px -12px rgba(31, 91, 255, .65); }
+.l3-pb.on:not(.f)::after { content: ""; width: 2px; height: 24px; background: #1F5BFF; border-radius: 2px; animation: l3caret 1s steps(1) infinite !important; }
+@keyframes l3caret { 50% { opacity: 0; } }
+html body #login .l3-pins .lgx-pin { position: absolute !important; left: 0; top: 0; width: calc(100% - 50px) !important; height: 100% !important; opacity: 0 !important; z-index: 3; padding: 0 !important; font-size: 16px !important; border: 0 !important; background: none !important; box-shadow: none !important; transform: none !important; }
+.l3-eye { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid #D3DCF6; background: linear-gradient(180deg, #fff, #EBF1FF); color: #14247F; display: grid; place-items: center; cursor: pointer; padding: 0;
+  box-shadow: 0 7px 14px -9px rgba(31, 91, 255, .5); transition: transform .18s, box-shadow .18s; }
+.l3-eye:active { transform: scale(.92); }
+.l3-eye svg { width: 19px; height: 19px; }
+.l3-pins.rev .l3-eye { color: #1F5BFF; border-color: #22C3FF; }
+html body #login .l3-pins.shake { animation: l3shake .4s !important; }
+@keyframes l3shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+
+/* ---------- OTP boxes ---------- */
+html body #login .otp { display: grid !important; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px !important; }
+html body #login .otp input {
+  width: 100% !important; height: clamp(46px, 7.2vw, 58px); padding: 0 !important; text-align: center; border-radius: 15px !important; font: 700 22px Sora, Poppins, sans-serif !important;
+  background: linear-gradient(180deg, #fff, #EBF1FF) !important; border: 1.5px solid #D3DCF6 !important; color: #0B1F5E !important; -webkit-text-fill-color: #0B1F5E !important;
+  box-shadow: 0 7px 14px -9px rgba(31, 91, 255, .5), inset 0 -3px 6px rgba(31, 91, 255, .07) !important; transition: border-color .18s, box-shadow .18s, transform .18s !important;
+}
+html body #login .otp input:focus { border-color: #22C3FF !important; transform: translateY(-3px); box-shadow: 0 0 0 4px rgba(34, 195, 255, .22), 0 14px 24px -12px rgba(31, 91, 255, .65) !important; }
+
+/* ---------- "is this you" hero + PIN / OTP switch ---------- */
+html body #login .lgx-hero { border-radius: 24px !important; margin: 0 0 14px !important; background: linear-gradient(150deg, #1F5BFF 0%, #14247F 100%) !important; box-shadow: 0 18px 34px -18px rgba(31, 91, 255, .8), inset 0 1px 0 rgba(255, 255, 255, .35) !important; }
+html body #login .lgx-seg { background: #E6EDFF !important; border-radius: 999px !important; padding: 4px !important; box-shadow: inset 0 2px 4px rgba(20, 36, 127, .08); margin-bottom: 14px; }
+html body #login .lgx-seg button { border-radius: 999px !important; transition: background .2s, color .2s, box-shadow .2s !important; }
+html body #login .lgx-seg button.on, html body #login .lgx-seg button[aria-pressed="true"], html body #login .lgx-seg button.active {
+  background: linear-gradient(135deg, #1F5BFF, #22A8FF) !important; box-shadow: 0 8px 16px -8px rgba(31, 91, 255, .9) !important; }
+
+/* short laptop screens (e.g. 1280x650 at 150%): keep the whole card on screen */
+@media (min-width: 821px) and (max-height: 800px) {
+  html body #login .lg-card { padding: 50px 28px 14px !important; }
+  html body #login.lg-who .lg-card { padding-top: 16px !important; }
+  html body #login .lgx-hero { padding: 6px 10px 8px !important; margin-bottom: 10px !important; }
+  html body #login .lgx-ring { transform: scale(.66); transform-origin: 50% 0; margin-bottom: -40px !important; }
+  html body #login .lgx-seg { margin-bottom: 8px; }
+  html body #login .lg-wb::after { margin-top: 5px; }
+  html body #login .lg-h { margin: 12px auto 14px !important; }
+  html body #login .btn.primary { height: 52px; margin-top: 12px !important; }
+  html body #login .lx-secure { margin-top: 10px !important; }
+  html body #login .lgx-row { margin-top: 6px; }
+}
+
+/* ---------- 3D glossy button ---------- */
+html body #login .btn.primary {
+  position: relative; overflow: hidden; width: 100%; height: 56px; margin-top: 18px !important; padding: 0 56px 0 24px !important; border: 0 !important; border-radius: 999px !important;
+  font: 700 17px Poppins, system-ui, sans-serif !important; letter-spacing: .01em; color: #fff !important; text-shadow: 0 1px 2px rgba(8, 20, 110, .35);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .42) 0%, rgba(255, 255, 255, .1) 46%, rgba(255, 255, 255, 0) 50%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E") no-repeat right 26px center / 19px,
+    linear-gradient(135deg, #1F5BFF 0%, #1388FF 55%, #22C3FF 100%) !important;
+  box-shadow: 0 16px 30px -12px rgba(31, 91, 255, .85), 0 0 0 1px rgba(255, 255, 255, .25) inset, inset 0 -10px 18px rgba(8, 30, 150, .28) !important;
+  transition: transform .18s cubic-bezier(.2, .8, .2, 1), box-shadow .18s !important; will-change: transform;
+}
+html body #login .btn.primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 22px 34px -12px rgba(31, 91, 255, .95), 0 0 0 1px rgba(255, 255, 255, .3) inset, inset 0 -10px 18px rgba(8, 30, 150, .28) !important; }
+html body #login .btn.primary:active:not(:disabled) { transform: translateY(1px) scale(.985); box-shadow: 0 8px 16px -10px rgba(31, 91, 255, .9), inset 0 -6px 12px rgba(8, 30, 150, .3) !important; }
+html body #login .btn.primary:not(:disabled)::after { display: none !important; }
+html body #login .btn.primary:disabled {
+  padding-right: 24px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .3) 0%, rgba(255, 255, 255, 0) 50%), linear-gradient(135deg, #1F5BFF 0%, #1388FF 55%, #22C3FF 100%) !important; opacity: 1; cursor: progress;
+}
+html body #login #goBtn:disabled .spin { animation: peSpin .75s linear infinite !important; }
+
+html body #login #stepOtp h2 { font: 800 22px Sora, Poppins, system-ui, sans-serif !important; color: #0B1F5E !important; margin: 0 0 6px !important; }
+html body #login #otpInfo { font-size: 13px; color: #6B7499 !important; margin-bottom: 12px; }
+
+/* ---------- small print ---------- */
+html body #login .lg-forgot, html body #login .linkbtn { color: #1F5BFF !important; font-weight: 600; }
+html body #login .lgx-row { text-align: center; margin-top: 12px; }
+html body #login .lx-secure { color: #6B7499 !important; margin-top: 16px !important; font-size: 12px !important; }
+html body #login .lx-secure svg { color: #1F5BFF !important; }
+html body #login .lg-foot { color: #fff !important; text-shadow: 0 1px 3px rgba(8, 20, 110, .75); border: 0 !important; display: flex !important; justify-content: flex-end; gap: 10px; font-size: 11.5px; padding-top: 6px; }
+html body #login .lg-foot i, html body #login .lg-foot span + i + span { display: none; }
+
+/* ---------- phone / small tablet: photo on top, card below ---------- */
+@media (max-width: 820px) {
+  html body #login {
+    background: #EAF2FF url(login-bg-m.webp) center top / cover no-repeat !important;
+    min-height: 100vh; min-height: 100dvh;
+    padding: max(36dvh, 176px) 16px max(14px, env(safe-area-inset-bottom)) !important;
+    grid-template-rows: auto 1fr auto !important;
+  }
+  html body #login .lg-top { align-items: center; text-align: center; gap: 6px; margin-top: -8px; }
+  html body #login .lg-logo img { height: 46px !important; }
+  html body #login .lg-top::after { font-size: 12.5px; }
+  html body #login .lg-main { grid-template-columns: minmax(0, 1fr) !important; align-items: start !important; padding-top: 52px !important; }
+  html body #login .lg-card { grid-column: 1 !important; justify-self: center; margin-right: 0; max-width: 440px !important; padding: 52px 20px 16px !important; border-radius: 28px !important; }
+  html body #login .lg-card::before { border-radius: 31px; }
+  html body #login .lg-card::after { border-radius: 28px; }
+  html body #login .l3-badge { top: -34px; width: 68px; height: 68px; margin-left: -34px; }
+  html body #login .lg-wb { font-size: 26px !important; }
+  html body #login .lg-foot { justify-content: center; }
+}
+@media (max-width: 380px) {
+  .l3-pins { gap: 6px; } .l3-eye { width: 34px; height: 34px; }
+  html body #login .l3-pins .lgx-pin { width: calc(100% - 42px) !important; }
+}
+
+/* ---------- low-power / reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html body #login .lg-card::before, .l3-bi, .l3-bi::before { animation: none !important; }
+  html body #login .lg-card { transform: none !important; }
+}
+html.pe-lite body #login .lg-card::before, html.pe-lite .l3-bi, html.pe-lite .l3-bi::before { animation: none !important; }
+html.pe-lite body #login .lg-card { transform: none !important; }
