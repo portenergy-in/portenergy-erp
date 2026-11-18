@@ -4,6 +4,12 @@
 (function () {
   'use strict';
   var RELEASES = [
+    { id: '2026-11-18c', date: '18 Nov 2026', title: 'Quotation Comparison: faster and clearer', items: [
+      { i: '📄', t: 'Extract from PDF', d: 'Choose the vendor, tap Extract from PDF and attach the quotation. Items, HSN, quantity, rate and GST fill in for you.' },
+      { i: '🚚', t: 'Freight and landed cost', d: 'Enter freight / P&F for each vendor. L1 is now decided on the final cost: basic + GST + freight.' },
+      { i: '📋', t: 'Pull items from an Indent', d: 'Tap Pull items from Indent, choose an approved PR and its items, HSN and quantity load into the comparison.' },
+      { i: '📊', t: 'Paste rates from Excel', d: 'Copy a rate column in Excel, click the first rate cell and press Ctrl+V. All rows below fill together.' }
+    ] },
     { id: '2026-11-18b', date: '18 Nov 2026', title: 'New: Vendor Quotations register', items: [
       { i: '🗂️', t: 'Every vendor quotation in one place', d: 'Enter each quotation with its vendor quotation number, offer ref, validity, sections, items, rates, terms and the PDF.' },
       { i: '🔁', t: 'Offers and revisions', d: 'A vendor can send offer A, B and C. Each is saved separately and the newest offer is marked Latest.' },
@@ -69,6 +75,7 @@
     setTimeout(function () { if (!document.getElementById('pePushBar') && !document.getElementById('peDob')) show(); else setTimeout(check, 4000); }, 3500);
   }
   var HOW = {
+    '2026-11-18c': { go: { v: 'list', k: 'quotes' }, goLabel: 'Open Quotation Comparison', steps: ['Open Quotation Comparison and tap New. Pick the vendors in the columns.', 'Tap Pull items from Indent to load items from an approved PR, or add the lines by hand.', 'Tap Extract from PDF for each vendor and attach that vendor quotation. Check the rates it filled.', 'Or copy a rate column from Excel, click the first rate cell for that vendor and press Ctrl+V.', 'Type each vendor freight / P&F. The summary shows the final cost and marks L1.', 'Save, then create the PO from L1.'] },
     '2026-11-18b': { go: { v: 'list', k: 'vq' }, goLabel: 'Open Vendor Quotations', steps: ['Open Procurement > Vendor Quotations and tap New.', 'Pick the vendor, type the vendor quotation number and the offer ref, for example 5403-C.', 'Add the items with Section, quantity and rate. Or attach the PDF in PEPL AI and say: enter this quotation.', 'Press Save. A newer offer from the same vendor and subject becomes the latest.', 'In Quotation Comparison pick the vendors, type the offer ref if needed, then tap Fill rates from quotations.', 'Open a quotation to create the PO from it, or add its new items to the Item master.'] },
     '2026-11-18': { go: { v: 'list', k: 'quotes' }, goLabel: 'Open Quotation Comparison', steps: ['Open Procurement > Quotation Comparison and tap New.', 'Pick the vendors. The same vendor can sit in two columns: give each column its own offer ref, for example 5403-B and 5403-C.', 'Type a Section on each line, for example Hot Dip or Machinery, then enter the rates.', 'Save. The comparison, the print and the PO show a heading and a subtotal for every section.', 'Create PO from L1 keeps the winning offer and its sections.'] },
     '2026-11-17c': { steps: ['Tap the PEPL AI button.', 'Attach a quotation, invoice or GST certificate.', 'Type what you need, for example: fill this vendor form.', 'Watch the form fill. Check it, then press Save. The AI never saves for you.'] },
