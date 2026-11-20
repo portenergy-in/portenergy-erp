@@ -1092,7 +1092,7 @@ function openDetail(key, id) {
   call('getRecord', S.token, key, id).then(function (res) { clearTimeout(pvT); if (!S.openRec || S.openRec.id !== id) return; $('pane').classList.remove('pe-pv'); renderDetail(e, res); }).catch(function (x) { $('dbody').innerHTML = '<div class="empty"><b>Could not open</b>' + esc(x.message) + '</div>'; });
 }
 function renderDetail(e, res) {
-  var r = e.key === 'quotes' ? cmpFix(res.rec) : res.rec, x = res.extra || {};
+  var r = e.key === 'quotes' ? cmpFix(res.rec) : e.key === 'vq' ? vqView(e, res.rec) : res.rec, x = res.extra || {};
   var head = '<div class="dh"><div><h2>' + esc(e.single) + ' ' + badge(r.status) + '</h2><div class="sub">' + esc(r.id) + ' · created by ' + esc(r.createdBy || '-') + ' on ' + esc(r.createdAt || '-') + (r.updatedAt ? ' · updated ' + esc(r.updatedAt) : '') + '</div></div><button class="x" data-x>×</button></div>';
   var acts = res.actions.map(function (a) { return '<button class="btn ' + (a.style === 'primary' ? 'primary' : a.style === 'danger' ? 'danger' : 'soft') + '" data-a="' + a.k + '">' + esc(a.l) + '</button>'; });
   var can = function (k) { return ent(k) && ent(k).canCreate; };
@@ -1142,7 +1142,7 @@ function renderDetail(e, res) {
   var P2 = $('pane');
   P2.querySelector('[data-x]').onclick = closeDrawer;
   P2.querySelectorAll('[data-a]').forEach(function (b) { b.onclick = function () { runAction(e, r, res.actions.filter(function (z) { return z.k === b.dataset.a; })[0], b); }; });
-  if (P2.querySelector('[data-edit]')) P2.querySelector('[data-edit]').onclick = function () { openForm(e.key, r); };
+  if (P2.querySelector('[data-edit]')) P2.querySelector('[data-edit]').onclick = function () { openForm(e.key, res.rec); };
   P2.querySelectorAll('[data-mk]').forEach(function (b) { b.onclick = function () { makeFrom(b.dataset.mk, e.key, r); }; });
   P2.querySelectorAll('[data-rel]').forEach(function (b) { b.onclick = function () { openDetail(b.dataset.rel, b.dataset.id); }; });
   if (S.openRec && S.openRec.id === r.id) { S.openRec.r = r; S.openRec.x = x; }
@@ -1197,7 +1197,7 @@ function fxRate(n) { return fxIsF(n) ? fxRateOf(F.fx[n]) : 1; }
 function fxNote(r, n) { var x = fxParse(r, n); return x ? 'Quoted in ' + x.cur + '. Converted to INR at ' + x.rate.toFixed(4) + ' per ' + x.cur + (x.margin ? ' (incl. bank margin ' + x.margin + '%)' : '') + (x.date ? ' on ' + ddot(x.date) : '') + '. GST not applicable (import).' : ''; }
 function fxNum(v) { return v !== '' && v != null && !isNaN(+v) && +v > 0; }
 function fxLoad() {
-  F.fx = {}; if (F.key !== 'quotes' || F.isNew) return;
+  F.fx = {}; if (F.isNew) return; if (F.key === 'vq') { vqLoad(); return; } if (F.key !== 'quotes') return;
   [1, 2, 3, 4].forEach(function (n) {
     var x = fxParse(F.rec, n); if (!x) return; F.fx[n] = x; F.rec['vrm' + n] = fxStrip(F.rec['vrm' + n]);
     ['fr', 'tp', 'ntp'].forEach(function (q) { if (fxNum(F.rec[q + n])) F.rec[q + n] = r4(+F.rec[q + n] / x.rate); });
@@ -1238,6 +1238,61 @@ function fxPanel() {
   var upd = function (n) { var x = F.fx[n], u = p.querySelector('[data-fxu="' + n + '"]'); x.date = new Date().toISOString().slice(0, 10); if (u) u.textContent = 'Rate used ₹' + fxRateOf(x).toFixed(4); calcPreview(); };
   p.querySelectorAll('[data-fxr]').forEach(function (el) { el.oninput = function () { var n = +el.dataset.fxr; F.fx[n].market = el.value === '' ? '' : r4(parseFloat(el.value) || 0); upd(n); }; });
   p.querySelectorAll('[data-fxm]').forEach(function (el) { el.oninput = function () { var n = +el.dataset.fxm; F.fx[n].margin = Math.max(0, parseFloat(el.value) || 0); upd(n); }; });
+}
+
+/* ---- Vendor quotation in foreign currency (Nov 2026): type rates in USD/EUR/CNY, app saves INR. ---- */
+function vqHold(e) {
+  var re = /^(remarks?|notes?|comments?|description|terms)$/i, ok = function (z) { return !z.t || z.t === 'text' || z.t === 'textarea'; };
+  var f = e.fields.filter(function (z) { return re.test(z.k) && ok(z); })[0] || e.fields.filter(function (z) { return z.t === 'textarea' && !z.sec; })[0];
+  return f ? f.k : '';
+}
+function vqParse(t) { var m = FX_TAG.exec(String(t || '')); if (!m || m[1] === 'INR') return null; return { cur: m[1], rate: +m[2], date: m[3], margin: +m[4] || 0, market: +m[5] || +m[2] }; }
+function vqLoad() {
+  var h = vqHold(F.e); if (!h) return; var x = vqParse(F.rec[h]); if (!x) return;
+  F.fx[1] = x; F.rec[h] = fxStrip(F.rec[h]);
+  if (fxNum(F.rec.freight)) F.rec.freight = r4(+F.rec.freight / x.rate);
+  F.lines.forEach(function (l) { if (fxNum(l.rate)) l.rate = r4(+l.rate / x.rate); });
+}
+function vqApply(d) {
+  var h = vqHold(F.e), x = F.fx && F.fx[1], base = h ? fxStrip(d[h]) : '';
+  if (h && d[h] !== undefined) d[h] = base;
+  if (!x || x.cur === 'INR') return '';
+  var k = fxRateOf(x); if (!(k > 0)) return 'Enter the exchange rate (1 ' + x.cur + ' = Rs.) before saving.';
+  d.lines = JSON.parse(JSON.stringify(F.lines));
+  d.lines.forEach(function (l) { if (fxNum(l.rate)) l.rate = r4(+l.rate * k); l.gst = '0'; });
+  if (fxNum(d.freight)) d.freight = r4(+d.freight * k);
+  if (h) d[h] = (base ? base + '\n' : '') + fxTag(x);
+  return '';
+}
+function vqView(e, r) {
+  if (!r || e.key !== 'vq') return r; var h = vqHold(e); if (!h) return r;
+  var x = vqParse(r[h]); if (!x) return r;
+  var sub = 0; (r.lines || []).forEach(function (l) { sub += num(l.qty) * num(l.rate); }); sub += num(r.freight);
+  var o = {}; Object.keys(r).forEach(function (k) { o[k] = r[k]; });
+  var tx = fxStrip(r[h]);
+  o[h] = (tx ? tx + '\n' : '') + 'Quoted in ' + x.cur + ' (total ' + x.cur + ' ' + f2(sub / x.rate) + '). Converted to INR at ' + x.rate.toFixed(4) + ' per ' + x.cur + (x.margin ? ' (incl. bank margin ' + x.margin + '%)' : '') + (x.date ? ' on ' + ddot(x.date) : '') + '. All rates and totals are in INR. GST not applicable (import).';
+  return o;
+}
+function vqFxRows() {
+  var x = F.fx[1], c = x.cur, k = fxRateOf(x), sub = 0; F.lines.forEach(function (l) { sub += r2(num(l.qty) * num(l.rate)); });
+  var fr = num(F.rec.freight), tot = r2(sub + fr), it = r2(tot * k);
+  return [['Subtotal (' + c + ')', c + ' ' + f2(sub)], ['GST', 'Not applicable (import)'], ['Freight (' + c + ')', c + ' ' + f2(fr)], ['Total (' + c + ')', c + ' ' + f2(tot)], ['Exchange rate', k > 0 ? '1 ' + c + ' = ₹' + k.toFixed(4) : 'Enter the exchange rate above'], ['TOTAL IN INR', k > 0 ? inr(it) : '-'], ['In words', k > 0 ? 'Rupees ' + words(it) : '-']];
+}
+function vqPanel() {
+  if (!F || F.key !== 'vq' || !$('ln')) return;
+  var w = $('ln').parentNode, p = $('fxp'); if (!p) { w.insertAdjacentHTML('beforebegin', '<div id="fxp"></div>'); p = $('fxp'); }
+  F.fx = F.fx || {}; var x = F.fx[1], cur = x ? x.cur : 'INR';
+  p.innerHTML = '<div class="note" style="margin:0 0 6px"><b>Currency.</b> Foreign vendor: choose the currency, type the exchange rate of today, then type the rates and freight in that currency. Total in INR is calculated below. GST is not added.</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;padding:8px 10px;background:#F6F8FC;border-radius:8px"><b>Currency</b><select class="in" data-fxc style="width:auto;min-width:96px">' + FX_CUR.map(function (c) { return '<option' + (c === cur ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select>' +
+    (x && cur !== 'INR' ? '<span class="note">Exchange rate: 1 ' + cur + ' = ₹</span><input class="in" data-fxr inputmode="decimal" placeholder="e.g. 83.50" style="width:100px" value="' + esc(x.market || '') + '"><span class="note">Bank margin %</span><input class="in" data-fxm inputmode="decimal" style="width:64px" value="' + esc(x.margin || 0) + '"><b data-fxu>Rate used ₹' + fxRateOf(x).toFixed(4) + '</b>' : '') + '</div>';
+  var sel = p.querySelector('[data-fxc]');
+  sel.onchange = function () {
+    if (sel.value === 'INR') delete F.fx[1]; else F.fx[1] = { cur: sel.value, market: '', margin: 0, date: new Date().toISOString().slice(0, 10) };
+    vqPanel(); renderLines(); calcPreview(); var ri = $('fxp').querySelector('[data-fxr]'); if (ri) ri.focus();
+  };
+  var upd = function () { var u = p.querySelector('[data-fxu]'); F.fx[1].date = new Date().toISOString().slice(0, 10); if (u) u.textContent = 'Rate used ₹' + fxRateOf(F.fx[1]).toFixed(4); calcPreview(); };
+  var ri = p.querySelector('[data-fxr]'); if (ri) ri.oninput = function () { F.fx[1].market = ri.value === '' ? '' : r4(parseFloat(ri.value) || 0); upd(); };
+  var mi = p.querySelector('[data-fxm]'); if (mi) mi.oninput = function () { F.fx[1].margin = Math.max(0, parseFloat(mi.value) || 0); upd(); };
 }
 /* saved comparison: recompute L1 / saving when a foreign vendor is involved (GST excluded for them) */
 function cmpFix(r) {
@@ -1647,9 +1702,10 @@ function renderLines() {
   var e = F.e, fixed = e.lines.fixed, key = F.key;
   var cols = e.lines.cols.filter(function (c) { return c.t !== 'hidden'; });
   if (key === 'quotes') fxPanel();
+  if (key === 'vq') vqPanel();
   if (key === 'quotes') cols = cols.filter(function (c) { var m = /^r(\d)$/.exec(c.k); return !m || F.rec['vendor' + m[1]]; });
   if (!F.lines.length) { $('ln').innerHTML = '<tr><td class="note" style="padding:14px">' + (key === 'grn' ? 'Select a PO to load its pending items.' : 'No lines.') + '</td></tr>'; return; }
-  var label = function (c) { var m = /^r(\d)$/.exec(c.k); return m && key === 'quotes' ? esc(String(F.rec['vendor' + m[1]]).slice(0, 18) + (F.rec['off' + m[1]] ? ' · ' + String(F.rec['off' + m[1]]).slice(0, 10) : '')) + (fxIsF(m[1]) ? ' <small>(' + F.fx[m[1]].cur + ')</small>' : '') : esc(c.l); };
+  var label = function (c) { var m = /^r(\d)$/.exec(c.k); return m && key === 'quotes' ? esc(String(F.rec['vendor' + m[1]]).slice(0, 18) + (F.rec['off' + m[1]] ? ' · ' + String(F.rec['off' + m[1]]).slice(0, 10) : '')) + (fxIsF(m[1]) ? ' <small>(' + F.fx[m[1]].cur + ')</small>' : '') : esc(c.l) + (key === 'vq' && c.k === 'rate' && fxIsF(1) ? ' <small>(' + F.fx[1].cur + ')</small>' : ''); };
   $('ln').innerHTML = '<thead><tr><th>#</th>' + cols.map(function (c) { return '<th>' + label(c) + (c.req ? ' <span class="req">*</span>' : '') + '</th>'; }).join('') + (fixed ? '' : '<th></th>') + '</tr></thead><tbody>' +
     F.lines.map(function (l, i) {
       return '<tr data-i="' + i + '"><td class="n">' + (i + 1) + '</td>' + cols.map(function (c) {
@@ -1709,6 +1765,7 @@ function hsnHint(i) {
   cell.querySelector('a').onclick = function (ev) { ev.preventDefault(); l.hsn = g.hsn; setCell(tr, 'hsn', g.hsn); if (g.gst && 'gst' in l) { l.gst = g.gst; setCell(tr, 'gst', g.gst); } cell.innerHTML = '<span class="note">' + esc(g.label) + ' · verify</span>'; calcPreview(); };
 }
 function lineAuto(k, l) {
+  if (k === 'amount' && F.key === 'vq' && fxIsF(1)) return F.fx[1].cur + ' ' + f2(r2(num(l.qty) * num(l.rate)));
   if (k === 'amount') return inr(r2(num(l.qty) * num(l.rate) * (1 - num(l.disc) / 100)), true);
   if (k === 'rejected') return r2(num(l.received) - num(l.accepted));
   if (k === 'recd' || k === 'ordered' || k === 'prev') return num(l[k]);
@@ -1737,7 +1794,8 @@ function calcPreview() {
   }
   if (k === 'bills') { var t2 = r2(num(r.taxable) + num(r.cgst) + num(r.sgst) + num(r.igst)); var tds = num(r.tdsPct) > 0 ? r2(num(r.taxable) * num(r.tdsPct) / 100) : num(r.tds); rows = [['Invoice total', inr(t2)], ['TDS', inr(tds)], ['Net payable', inr(t2 - tds)]]; }
   if (k === 'clientbills') rows = [['Invoice total', inr(num(r.taxable) + num(r.gst))]];
-  if (k === 'vq') { var vs0 = 0, vg0 = 0; F.lines.forEach(function (l) { var a = r2(num(l.qty) * num(l.rate)); vs0 += a; vg0 += r2(a * num(l.gst) / 100); }); var vt0 = r2(vs0 + vg0 + num(r.freight)); rows = [['Subtotal', inr(vs0)], ['GST', inr(vg0)], ['Freight', inr(num(r.freight))], ['Grand total', inr(vt0)], ['In words', 'Rupees ' + words(vt0)]]; }
+  if (k === 'vq' && fxIsF(1)) { rows = vqFxRows(); }
+  else if (k === 'vq') { var vs0 = 0, vg0 = 0; F.lines.forEach(function (l) { var a = r2(num(l.qty) * num(l.rate)); vs0 += a; vg0 += r2(a * num(l.gst) / 100); }); var vt0 = r2(vs0 + vg0 + num(r.freight)); rows = [['Subtotal', inr(vs0)], ['GST', inr(vg0)], ['Freight', inr(num(r.freight))], ['Grand total', inr(vt0)], ['In words', 'Rupees ' + words(vt0)]]; }
   if (k === 'po' && rows.length) { var pt = rows.filter(function (x) { return x[0] === 'Grand total'; })[0]; if (pt) rows.push(['In words', 'Rupees ' + words(num(String(pt[1]).replace(/[^0-9.]/g, '')))]); }
   if (k === 'bills' && rows.length && rows[0][0] === 'Invoice total') rows.push(['In words', 'Rupees ' + words(num(String(rows[0][1]).replace(/[^0-9.]/g, '')))]);
   if (k === 'vehicles' && r.endKm !== '' && r.startKm !== '') rows = [['Distance', r2(num(r.endKm) - num(r.startKm)) + ' km']];
@@ -1870,6 +1928,7 @@ function saveForm(btn, then) {
   if (!F.isNew) data.id = F.id;
   if (e.lines) data.lines = F.lines;
   if (e.key === 'quotes') { var fxe = fxApply(data); if (fxe) { toast(fxe, true); return; } }
+  if (e.key === 'vq') { var vxe = vqApply(data); if (vxe) { toast(vxe, true); return; } }
   busy(btn, true, 'Saving');
   var other = $('fSubmit') && btn !== $('fSubmit') ? $('fSubmit') : $('fSave'); if (other) other.disabled = true;
   var key = F.key;
@@ -2117,7 +2176,7 @@ function printHtml(body, opt) {
     setTimeout(function () { if (left > 0) { left = 0; go2(); } }, 4000);
   });
 }
-function printRecord(e, r, x) { if (window.PE_PRINT && window.PE_PRINT(e, r, x || {})) return; if (e.key === 'po') return printPO(r, x || {}); if (e.key === 'quotes') return printQuotes(r, x || {}); if (e.key === 'approvals') return printIOA(r); if (e.key === 'notices') return printCircular(r); if (e.key === 'decisions') return printDecision(r); printGeneric(e, r); }
+function printRecord(e, r, x) { if (e.key === 'vq') r = vqView(e, r); if (window.PE_PRINT && window.PE_PRINT(e, r, x || {})) return; if (e.key === 'po') return printPO(r, x || {}); if (e.key === 'quotes') return printQuotes(r, x || {}); if (e.key === 'approvals') return printIOA(r); if (e.key === 'notices') return printCircular(r); if (e.key === 'decisions') return printDecision(r); printGeneric(e, r); }
 function printPO(r, x) {
   var v = x.vendor || {}, co = S.sess.config.companies[0], cfg = S.sess.config;
   var wo = r.orderType === 'Work Order' || r.orderType === 'Service Order', amd = num(r.amdNo) > 0, no = r.docNo || r.id;
