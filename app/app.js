@@ -1187,7 +1187,6 @@ var CMP_LAST = null;
    Currency + exchange rate + date are frozen in the vendor remarks as a hidden tag [[FX:cur|rate|date|margin|market]]. */
 var FX_CUR = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'CNY', 'SGD', 'SAR', 'JPY', 'KRW', 'AUD', 'CAD', 'MYR', 'THB', 'QAR', 'KWD', 'OMR', 'BHD', 'CHF', 'HKD', 'ZAR', 'IDR', 'VND', 'TRY'];
 var FX_TAG = /\s*\[\[FX:([A-Z]{3})\|([\d.]+)\|([\d-]*)\|([\d.]*)\|([\d.]*)\]\]\s*/;
-var FX_CACHE = {};
 function r4(n) { return Math.round((Number(n) + Number.EPSILON) * 10000) / 10000; }
 function fxParse(r, n) { var m = FX_TAG.exec(String(r['vrm' + n] || '')); if (!m || m[1] === 'INR') return null; return { cur: m[1], rate: +m[2], date: m[3], margin: +m[4] || 0, market: +m[5] || +m[2] }; }
 function fxStrip(t) { return String(t == null ? '' : t).replace(FX_TAG, '').trim(); }
@@ -1218,45 +1217,27 @@ function fxApply(d) {
   }
   return '';
 }
-function fxFetch(cur) {
-  if (FX_CACHE[cur] && Date.now() - FX_CACHE[cur].t < 3600000) return Promise.resolve(FX_CACHE[cur].v);
-  var tries = ['https://open.er-api.com/v6/latest/' + cur, 'https://api.frankfurter.app/latest?from=' + cur + '&to=INR'];
-  var go = function (i) {
-    if (i >= tries.length) return Promise.reject(new Error('no rate'));
-    return fetch(tries[i]).then(function (r) { return r.json(); }).then(function (j) { var v = +(j && j.rates && j.rates.INR); if (!(v > 0)) throw 0; FX_CACHE[cur] = { v: r4(v), t: Date.now() }; return r4(v); }).catch(function () { return go(i + 1); });
-  };
-  return go(0);
-}
-function fxLive(n) {
-  var x = F && F.fx && F.fx[n]; if (!x) return; var cur = x.cur;
-  var st = document.querySelector('[data-fxs="' + n + '"]'); if (st) st.textContent = 'Getting live rate...';
-  fxFetch(cur).then(function (v) {
-    if (!F || !F.fx || !F.fx[n] || F.fx[n].cur !== cur) return;
-    F.fx[n].market = v; F.fx[n].date = new Date().toISOString().slice(0, 10); fxPanel(); renderLines(); calcPreview();
-  }).catch(function () { var s2 = document.querySelector('[data-fxs="' + n + '"]'); if (s2) s2.textContent = 'Live rate not available now. Please type the rate.'; });
-}
 function fxPanel() {
   if (!F || F.key !== 'quotes' || !$('ln')) return;
   var w = $('ln').parentNode, p = $('fxp'); if (!p) { w.insertAdjacentHTML('beforebegin', '<div id="fxp"></div>'); p = $('fxp'); }
   F.fx = F.fx || {};
   var vs = [1, 2, 3, 4].filter(function (n) { return F.rec['vendor' + n]; });
-  p.innerHTML = !vs.length ? '' : '<div class="note" style="margin:0 0 6px"><b>Vendor currency.</b> For a foreign vendor, choose the currency and type the rates in that currency. INR is calculated automatically. GST is not added for foreign vendors.</div>' + vs.map(function (n) {
+  p.innerHTML = !vs.length ? '' : '<div class="note" style="margin:0 0 6px"><b>Vendor currency.</b> For a foreign vendor, choose the currency, type the exchange rate of today (how many rupees for 1 unit of that currency), then type the vendor rates in that currency. INR is calculated automatically. GST is not added for foreign vendors.</div>' + vs.map(function (n) {
     var x = F.fx[n], cur = x ? x.cur : 'INR';
     return '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 6px;padding:8px 10px;background:#F6F8FC;border-radius:8px"><b style="min-width:150px">V' + n + ' · ' + esc(String(F.rec['vendor' + n]).slice(0, 24)) + '</b>' +
       '<select class="in" data-fxc="' + n + '" style="width:auto;min-width:96px">' + FX_CUR.map(function (c) { return '<option' + (c === cur ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select>' +
-      (x && cur !== 'INR' ? '<span class="note">1 ' + cur + ' = ₹</span><input class="in" data-fxr="' + n + '" inputmode="decimal" style="width:100px" value="' + esc(x.market || '') + '"><span class="note">Bank margin %</span><input class="in" data-fxm="' + n + '" inputmode="decimal" style="width:64px" value="' + esc(x.margin || 0) + '"><b data-fxu="' + n + '">Rate used ₹' + fxRateOf(x).toFixed(4) + '</b><button class="btn soft sm" type="button" data-fxf="' + n + '">Live rate</button><span class="note" data-fxs="' + n + '">' + (x.date ? 'Rate date ' + esc(ddot(x.date)) : '') + '</span>' : '') + '</div>';
+      (x && cur !== 'INR' ? '<span class="note">Exchange rate: 1 ' + cur + ' = ₹</span><input class="in" data-fxr="' + n + '" inputmode="decimal" placeholder="e.g. 83.50" style="width:100px" value="' + esc(x.market || '') + '"><span class="note">Bank margin %</span><input class="in" data-fxm="' + n + '" inputmode="decimal" style="width:64px" value="' + esc(x.margin || 0) + '"><b data-fxu="' + n + '">Rate used ₹' + fxRateOf(x).toFixed(4) + '</b><span class="note" data-fxs="' + n + '">' + (x.date ? 'Rate date ' + esc(ddot(x.date)) : '') + '</span>' : '') + '</div>';
   }).join('');
   p.querySelectorAll('[data-fxc]').forEach(function (el) {
     el.onchange = function () {
       var n = +el.dataset.fxc, c = el.value;
-      if (c === 'INR') delete F.fx[n]; else F.fx[n] = { cur: c, market: (FX_CACHE[c] && FX_CACHE[c].v) || '', margin: 0, date: new Date().toISOString().slice(0, 10) };
-      fxPanel(); renderLines(); calcPreview(); if (c !== 'INR') fxLive(n);
+      if (c === 'INR') delete F.fx[n]; else F.fx[n] = { cur: c, market: '', margin: 0, date: new Date().toISOString().slice(0, 10) };
+      fxPanel(); renderLines(); calcPreview(); if (c !== 'INR') { var ri = $('fxp').querySelector('[data-fxr="' + n + '"]'); if (ri) ri.focus(); }
     };
   });
   var upd = function (n) { var x = F.fx[n], u = p.querySelector('[data-fxu="' + n + '"]'); x.date = new Date().toISOString().slice(0, 10); if (u) u.textContent = 'Rate used ₹' + fxRateOf(x).toFixed(4); calcPreview(); };
   p.querySelectorAll('[data-fxr]').forEach(function (el) { el.oninput = function () { var n = +el.dataset.fxr; F.fx[n].market = el.value === '' ? '' : r4(parseFloat(el.value) || 0); upd(n); }; });
   p.querySelectorAll('[data-fxm]').forEach(function (el) { el.oninput = function () { var n = +el.dataset.fxm; F.fx[n].margin = Math.max(0, parseFloat(el.value) || 0); upd(n); }; });
-  p.querySelectorAll('[data-fxf]').forEach(function (el) { el.onclick = function () { fxLive(+el.dataset.fxf); }; });
 }
 /* saved comparison: recompute L1 / saving when a foreign vendor is involved (GST excluded for them) */
 function cmpFix(r) {
