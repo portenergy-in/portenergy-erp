@@ -1442,9 +1442,41 @@ function pullQuotes() {
   }).catch(function (x) { busy(b, false); fail(x); });
 }
 function blankLine(e) { var o = {}; e.lines.cols.forEach(function (c) { o[c.k] = c.def != null ? c.def : ''; }); return o; }
+
+/* ---- Country code picker for vendor mobile numbers (Nov 2026). Stored as "+91 9500056234". No code saved earlier = +91. ---- */
+var CC_LIST = [['IN','India',91],['AE','United Arab Emirates',971],['SA','Saudi Arabia',966],['QA','Qatar',974],['KW','Kuwait',965],['OM','Oman',968],['BH','Bahrain',973],['US','United States',1],['CA','Canada',1],['GB','United Kingdom',44],['CN','China',86],['SG','Singapore',65],['MY','Malaysia',60],['ID','Indonesia',62],['TH','Thailand',66],['VN','Vietnam',84],['PH','Philippines',63],['JP','Japan',81],['KR','South Korea',82],['TW','Taiwan',886],['HK','Hong Kong',852],['BD','Bangladesh',880],['LK','Sri Lanka',94],['NP','Nepal',977],['BT','Bhutan',975],['PK','Pakistan',92],['AF','Afghanistan',93],['IR','Iran',98],['IQ','Iraq',964],['JO','Jordan',962],['LB','Lebanon',961],['IL','Israel',972],['TR','Turkey',90],['EG','Egypt',20],['ZA','South Africa',27],['NG','Nigeria',234],['KE','Kenya',254],['ET','Ethiopia',251],['GH','Ghana',233],['TZ','Tanzania',255],['UG','Uganda',256],['MA','Morocco',212],['DZ','Algeria',213],['TN','Tunisia',216],['LY','Libya',218],['SD','Sudan',249],['MU','Mauritius',230],['DE','Germany',49],['FR','France',33],['IT','Italy',39],['ES','Spain',34],['PT','Portugal',351],['NL','Netherlands',31],['BE','Belgium',32],['CH','Switzerland',41],['AT','Austria',43],['SE','Sweden',46],['NO','Norway',47],['DK','Denmark',45],['FI','Finland',358],['IE','Ireland',353],['PL','Poland',48],['CZ','Czechia',420],['GR','Greece',30],['RO','Romania',40],['HU','Hungary',36],['UA','Ukraine',380],['RU','Russia',7],['KZ','Kazakhstan',7],['UZ','Uzbekistan',998],['AU','Australia',61],['NZ','New Zealand',64],['MX','Mexico',52],['BR','Brazil',55],['AR','Argentina',54],['CL','Chile',56],['CO','Colombia',57],['PE','Peru',51],['MM','Myanmar',95],['KH','Cambodia',855],['LA','Laos',856],['MV','Maldives',960],['BN','Brunei',673],['MN','Mongolia',976],['AO','Angola',244],['MZ','Mozambique',258],['ZM','Zambia',260],['ZW','Zimbabwe',263],['CD','DR Congo',243],['CM','Cameroon',237],['SN','Senegal',221],['CI','Ivory Coast',225],['YE','Yemen',967],['SY','Syria',963]];
+function ccFlag(iso) { return String.fromCodePoint.apply(null, iso.split('').map(function (c) { return 127397 + c.charCodeAt(0); })); }
+function isCcField(f) { return !!(F && F.key === 'vendors' && f && (f.t === 'phone' || /mobile|phone|whatsapp|contactno|contactnumber/i.test(f.k))); }
+function ccSplit(v) {
+  v = String(v == null ? '' : v).trim();
+  var m = v.match(/^\+\s*(\d{1,4})[\s-]*(.*)$/);
+  if (m) {
+    var digits = m[1] + (m[2] || '').replace(/\D/g, ''), best = null;
+    CC_LIST.forEach(function (c) { var cs = String(c[2]); if (digits.indexOf(cs) === 0 && (!best || cs.length > String(best[2]).length)) best = c; });
+    if (best) return { cc: '+' + best[2], num: digits.slice(String(best[2]).length) };
+  }
+  var d = v.replace(/\D/g, ''); if (d.length === 12 && d.indexOf('91') === 0) d = d.slice(2);
+  return { cc: '+91', num: d };
+}
+function ccJoin(cc, num) { num = String(num || '').replace(/\D/g, ''); return num ? cc + ' ' + num : ''; }
+function ccHtml(f, v, locked, attr) {
+  var p = ccSplit(v), dis = locked ? ' disabled' : '', seen = {};
+  var opts = CC_LIST.filter(function (c) { return true; }).map(function (c) { var val = '+' + c[2]; return '<option value="' + val + '"' + (val === p.cc && !seen.sel && (seen.sel = 1) ? ' selected' : '') + '>' + ccFlag(c[0]) + ' ' + c[1] + ' (' + val + ')</option>'; }).join('');
+  return '<div class="ccw" style="display:flex;gap:6px"><select class="in" data-cc="1" style="flex:0 0 42%;min-width:0"' + dis + '>' + opts + '</select><input class="in" data-phone="1" inputmode="numeric" maxlength="15" placeholder="Mobile number" style="flex:1;min-width:0" ' + (attr || '') + dis + ' value="' + esc(p.num) + '"></div>';
+}
+function ccValid(v) {
+  if (!v) return true; var p = ccSplit(v);
+  if (p.cc === '+91') return /^[6-9]\d{9}$/.test(p.num);
+  return p.num.length >= 6 && p.num.length <= 14;
+}
+function ccApply(el, val) {
+  var w = el.closest('.ccw'), sel = w && w.querySelector('select'), p = ccSplit(val);
+  if (sel) sel.value = p.cc; el.value = p.num;
+}
 function inputHtml(f, val, locked, attr) {
   var a = (attr || '') + (locked ? ' disabled' : ''), v = val == null ? '' : val;
   if (f.t === 'ref') return comboHtml(f, v, locked, attr);
+  if (isCcField(f)) return ccHtml(f, v, locked, attr);
   switch (f.t) {
     case 'textarea': return '<textarea class="in" ' + a + ' rows="3">' + esc(v) + '</textarea>';
     case 'number': return '<input class="in" type="number" step="any" min="0" inputmode="decimal" ' + a + ' value="' + esc(v) + '">';
@@ -1476,12 +1508,16 @@ function renderFields() {
     var k = el.dataset.k;
     if (el.classList.contains('multi')) { el.onchange = function (ev) { var ins = el.querySelectorAll('input'); if (ev && ev.target && ev.target.value === 'All' && ev.target.checked) ins.forEach(function (i) { if (i.value !== 'All') i.checked = false; }); else if (ev && ev.target && ev.target.checked) ins.forEach(function (i) { if (i.value === 'All') i.checked = false; }); F.rec[k] = Array.prototype.filter.call(ins, function (i) { return i.checked; }).map(function (i) { return i.value; }); onFieldChange(k); }; return; }
     if (el.dataset.ref) { bindCombo(el, function (v, o, typing) { F.rec[k] = v; if (!typing) onFieldChange(k); calcPreview(); }); return; }
+    if (el.dataset.phone) {
+      var sel = el.closest('.ccw').querySelector('select'), hp = function () { var n = el.value.replace(/\D/g, ''); if (n !== el.value) el.value = n; F.rec[k] = ccJoin(sel.value, n); onFieldChange(k); };
+      el.addEventListener('input', hp); sel.addEventListener('change', hp); return;
+    }
     var h = function () { F.rec[k] = el.value; onFieldChange(k); calcPreview(); moneyWords(k); };
     el.addEventListener('input', h); el.addEventListener('change', h); moneyWords(k);
   });
   e.fields.filter(function (f) { return f.t === 'files'; }).forEach(function (f) { renderFiles(f); });
 }
-function setField(k, v) { F.rec[k] = v; var el = $('pane').querySelector('.fgrid [data-k="' + k + '"]'); if (el) { el.value = v; el.classList.remove('flash'); void el.offsetWidth; el.animate && el.animate([{ background: '#FFF0F7' }, { background: '#fff' }], { duration: 900 }); } }
+function setField(k, v) { F.rec[k] = v; var el = $('pane').querySelector('.fgrid [data-k="' + k + '"]'); if (el) { if (el.dataset.phone) ccApply(el, v); else el.value = v; el.classList.remove('flash'); void el.offsetWidth; el.animate && el.animate([{ background: '#FFF0F7' }, { background: '#fff' }], { duration: 900 }); } }
 function setHint(k, html, cls) { var h = $('pane').querySelector('[data-hint="' + k + '"]'); if (h) { h.innerHTML = html; h.className = 'hint ' + (cls || ''); } }
 function onFieldChange(k) {
   var key = F.key, r = F.rec;
@@ -1747,6 +1783,13 @@ function saveForm(btn, then) {
     if (!f.req || f.t === 'auto' || lockedField(e, f)) continue;
     var v = r[f.k];
     if (v === '' || v == null || (Array.isArray(v) && !v.length)) { toast(f.l + ' is required.', true); var el = $('pane').querySelector('.fgrid [data-k="' + f.k + '"]'); if (el) { el.focus(); el.animate && el.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 300 }); } return; }
+  }
+  for (var j = 0; j < e.fields.length; j++) {
+    var pf = e.fields[j];
+    if (isCcField(pf) && !lockedField(e, pf) && !ccValid(r[pf.k])) {
+      var pp = ccSplit(r[pf.k]); toast(pf.l + (pp.cc === '+91' ? ': enter a valid 10-digit Indian mobile number (starts with 6-9), or choose the correct country code.' : ': enter a valid number for ' + pp.cc + '.'), true);
+      var pe = $('pane').querySelector('.fgrid [data-k="' + pf.k + '"]'); if (pe) pe.focus(); return;
+    }
   }
   var data = {}; Object.keys(r).forEach(function (k) { data[k] = r[k]; });
   if (!F.isNew) data.id = F.id;
