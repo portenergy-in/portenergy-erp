@@ -1200,7 +1200,6 @@ function fxLoad() {
   F.fx = {}; if (F.isNew) return; if (F.key === 'vq') { vqLoad(); return; } if (F.key !== 'quotes') return;
   [1, 2, 3, 4].forEach(function (n) {
     var x = fxParse(F.rec, n); if (!x) return; F.fx[n] = x; F.rec['vrm' + n] = fxStrip(F.rec['vrm' + n]);
-    ['fr', 'tp', 'ntp'].forEach(function (q) { if (fxNum(F.rec[q + n])) F.rec[q + n] = r4(+F.rec[q + n] / x.rate); });
     F.lines.forEach(function (l) { ['r', 'n'].forEach(function (q) { if (fxNum(l[q + n])) l[q + n] = r4(+l[q + n] / x.rate); }); });
   });
 }
@@ -1211,7 +1210,6 @@ function fxApply(d) {
     if (d['vrm' + n] !== undefined || (x && x.cur !== 'INR')) d['vrm' + n] = base;
     if (!d['vendor' + n] || !x || x.cur === 'INR') continue;
     var k = fxRateOf(x); if (!(k > 0)) return 'Enter the exchange rate for vendor V' + n + ' (' + x.cur + ').';
-    ['fr', 'tp', 'ntp'].forEach(function (q) { if (fxNum(d[q + n])) d[q + n] = r4(+d[q + n] * k); });
     d.lines.forEach(function (l) { ['r', 'n'].forEach(function (q) { if (fxNum(l[q + n])) l[q + n] = r4(+l[q + n] * k); }); });
     d['vrm' + n] = (base ? base + '\n' : '') + fxTag(x);
   }
@@ -1250,7 +1248,6 @@ function vqParse(t) { var m = FX_TAG.exec(String(t || '')); if (!m || m[1] === '
 function vqLoad() {
   var h = vqHold(F.e); if (!h) return; var x = vqParse(F.rec[h]); if (!x) return;
   F.fx[1] = x; F.rec[h] = fxStrip(F.rec[h]);
-  if (fxNum(F.rec.freight)) F.rec.freight = r4(+F.rec.freight / x.rate);
   F.lines.forEach(function (l) { if (fxNum(l.rate)) l.rate = r4(+l.rate / x.rate); });
 }
 function vqApply(d) {
@@ -1260,29 +1257,28 @@ function vqApply(d) {
   var k = fxRateOf(x); if (!(k > 0)) return 'Enter the exchange rate (1 ' + x.cur + ' = Rs.) before saving.';
   d.lines = JSON.parse(JSON.stringify(F.lines));
   d.lines.forEach(function (l) { if (fxNum(l.rate)) l.rate = r4(+l.rate * k); l.gst = '0'; });
-  if (fxNum(d.freight)) d.freight = r4(+d.freight * k);
   if (h) d[h] = (base ? base + '\n' : '') + fxTag(x);
   return '';
 }
 function vqView(e, r) {
   if (!r || e.key !== 'vq') return r; var h = vqHold(e); if (!h) return r;
   var x = vqParse(r[h]); if (!x) return r;
-  var sub = 0; (r.lines || []).forEach(function (l) { sub += num(l.qty) * num(l.rate); }); sub += num(r.freight);
+  var sub = 0; (r.lines || []).forEach(function (l) { sub += num(l.qty) * num(l.rate); });
   var o = {}; Object.keys(r).forEach(function (k) { o[k] = r[k]; });
   var tx = fxStrip(r[h]);
-  o[h] = (tx ? tx + '\n' : '') + 'Quoted in ' + x.cur + ' (total ' + x.cur + ' ' + f2(sub / x.rate) + '). Converted to INR at ' + x.rate.toFixed(4) + ' per ' + x.cur + (x.margin ? ' (incl. bank margin ' + x.margin + '%)' : '') + (x.date ? ' on ' + ddot(x.date) : '') + '. All rates and totals are in INR. GST not applicable (import).';
+  o[h] = (tx ? tx + '\n' : '') + 'Quoted in ' + x.cur + ' (items total ' + x.cur + ' ' + f2(sub / x.rate) + '). Converted to INR at ' + x.rate.toFixed(4) + ' per ' + x.cur + (x.margin ? ' (incl. bank margin ' + x.margin + '%)' : '') + (x.date ? ' on ' + ddot(x.date) : '') + '. All rates and totals are in INR. Freight is in INR. GST not applicable (import).';
   return o;
 }
 function vqFxRows() {
   var x = F.fx[1], c = x.cur, k = fxRateOf(x), sub = 0; F.lines.forEach(function (l) { sub += r2(num(l.qty) * num(l.rate)); });
-  var fr = num(F.rec.freight), tot = r2(sub + fr), it = r2(tot * k);
-  return [['Subtotal (' + c + ')', c + ' ' + f2(sub)], ['GST', 'Not applicable (import)'], ['Freight (' + c + ')', c + ' ' + f2(fr)], ['Total (' + c + ')', c + ' ' + f2(tot)], ['Exchange rate', k > 0 ? '1 ' + c + ' = ₹' + k.toFixed(4) : 'Enter the exchange rate above'], ['TOTAL IN INR', k > 0 ? inr(it) : '-'], ['In words', k > 0 ? 'Rupees ' + words(it) : '-']];
+  var fr = num(F.rec.freight), itI = r2(sub * k), it = r2(itI + fr);
+  return [['Items total (' + c + ')', c + ' ' + f2(sub)], ['GST', 'Not applicable (import)'], ['Exchange rate', k > 0 ? '1 ' + c + ' = ₹' + k.toFixed(4) : 'Enter the exchange rate above'], ['Items total in INR', k > 0 ? inr(itI) : '-'], ['Freight (INR)', inr(fr)], ['TOTAL IN INR', k > 0 ? inr(it) : '-'], ['In words', k > 0 ? 'Rupees ' + words(it) : '-']];
 }
 function vqPanel() {
   if (!F || F.key !== 'vq' || !$('ln')) return;
   var w = $('ln').parentNode, p = $('fxp'); if (!p) { w.insertAdjacentHTML('beforebegin', '<div id="fxp"></div>'); p = $('fxp'); }
   F.fx = F.fx || {}; var x = F.fx[1], cur = x ? x.cur : 'INR';
-  p.innerHTML = '<div class="note" style="margin:0 0 6px"><b>Currency.</b> Foreign vendor: choose the currency, type the exchange rate of today, then type the rates and freight in that currency. Total in INR is calculated below. GST is not added.</div>' +
+  p.innerHTML = '<div class="note" style="margin:0 0 6px"><b>Currency.</b> Foreign vendor: choose the currency, type the exchange rate of today, then type the item rates in that currency. Freight is always typed in INR (₹). Total in INR is calculated below. GST is not added.</div>' +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;padding:8px 10px;background:#F6F8FC;border-radius:8px"><b>Currency</b><select class="in" data-fxc style="width:auto;min-width:96px">' + FX_CUR.map(function (c) { return '<option' + (c === cur ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select>' +
     (x && cur !== 'INR' ? '<span class="note">Exchange rate: 1 ' + cur + ' = ₹</span><input class="in" data-fxr inputmode="decimal" placeholder="e.g. 83.50" style="width:100px" value="' + esc(x.market || '') + '"><span class="note">Bank margin %</span><input class="in" data-fxm inputmode="decimal" style="width:64px" value="' + esc(x.margin || 0) + '"><b data-fxu>Rate used ₹' + fxRateOf(x).toFixed(4) + '</b>' : '') + '</div>';
   var sel = p.querySelector('[data-fxc]');
@@ -1787,7 +1783,7 @@ function calcPreview() {
     if (tot > S.sess.config.poLimit) rows.splice(3, 0, ['Approval', 'Dept Head + MD (above ' + inrShort(S.sess.config.poLimit) + ')']);
   }
   if (k === 'quotes') {
-    var tots = [1, 2, 3, 4].map(function (n) { if (!r['vendor' + n]) return null; var b = 0, g = 0, full = true, fxf = fxIsF(n), kk = fxRate(n); F.lines.forEach(function (l) { var v = l['r' + n]; if (v === '' || v == null || !(num(v) > 0)) full = false; else { var am = num(l.qty) * num(v); b += am; g += fxf ? 0 : am * num(l.gst) / 100; } }); var fr = num(r['fr' + n]); return { n: n, v: r['vendor' + n] + (r['off' + n] ? ' (' + r['off' + n] + ')' : '') + (fxf ? ' [' + F.fx[n].cur + ']' : ''), f: r2(fr * kk), t: r2((b + g + fr) * kk), full: full, fx: fxf ? F.fx[n] : null, ft: r2(b + g + fr) }; }).filter(Boolean);
+    var tots = [1, 2, 3, 4].map(function (n) { if (!r['vendor' + n]) return null; var b = 0, g = 0, full = true, fxf = fxIsF(n), kk = fxRate(n); F.lines.forEach(function (l) { var v = l['r' + n]; if (v === '' || v == null || !(num(v) > 0)) full = false; else { var am = num(l.qty) * num(v); b += am; g += fxf ? 0 : am * num(l.gst) / 100; } }); var fr = num(r['fr' + n]); return { n: n, v: r['vendor' + n] + (r['off' + n] ? ' (' + r['off' + n] + ')' : '') + (fxf ? ' [' + F.fx[n].cur + ']' : ''), f: r2(fr), t: r2((b + g) * kk + fr), full: full, fx: fxf ? F.fx[n] : null, ft: r2(b + g) }; }).filter(Boolean);
     var ok = tots.filter(function (x) { return x.full && x.t > 0; }).sort(function (a, b) { return a.t - b.t; });
     rows = []; tots.forEach(function (x) { rows.push([x.v + (ok[0] && ok[0].n === x.n ? '  ★ L1' : '') + (x.full ? '' : '  (incomplete)'), inr(x.t)]); if (x.fx) rows.push(['    ' + x.fx.cur + ' ' + f2(x.ft) + ' @ ₹' + fxRateOf(x.fx).toFixed(4) + ' (no GST)', x.fx.cur + ' ' + f2(x.ft)]); if (x.f) rows.push(['    of which freight / P&F', inr(x.f)]); });
     if (ok.length > 1) rows.push(['Saving vs L2', inr(ok[1].t - ok[0].t)]);
