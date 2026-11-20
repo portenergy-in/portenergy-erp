@@ -1092,7 +1092,7 @@ function openDetail(key, id) {
   call('getRecord', S.token, key, id).then(function (res) { clearTimeout(pvT); if (!S.openRec || S.openRec.id !== id) return; $('pane').classList.remove('pe-pv'); renderDetail(e, res); }).catch(function (x) { $('dbody').innerHTML = '<div class="empty"><b>Could not open</b>' + esc(x.message) + '</div>'; });
 }
 function renderDetail(e, res) {
-  var r = res.rec, x = res.extra || {};
+  var r = e.key === 'quotes' ? cmpFix(res.rec) : res.rec, x = res.extra || {};
   var head = '<div class="dh"><div><h2>' + esc(e.single) + ' ' + badge(r.status) + '</h2><div class="sub">' + esc(r.id) + ' · created by ' + esc(r.createdBy || '-') + ' on ' + esc(r.createdAt || '-') + (r.updatedAt ? ' · updated ' + esc(r.updatedAt) : '') + '</div></div><button class="x" data-x>×</button></div>';
   var acts = res.actions.map(function (a) { return '<button class="btn ' + (a.style === 'primary' ? 'primary' : a.style === 'danger' ? 'danger' : 'soft') + '" data-a="' + a.k + '">' + esc(a.l) + '</button>'; });
   var can = function (k) { return ent(k) && ent(k).canCreate; };
@@ -1119,16 +1119,16 @@ function renderDetail(e, res) {
     (ak.pending ? '<p class="note" style="margin-top:10px">Pending (' + ak.pending.length + '):</p><div>' + (ak.pending.map(function (n) { return '<span class="pchip">' + esc(n) + '</span>'; }).join('') || '<span class="note">Everyone has acknowledged.</span>') + '</div>' : '') +
     (ak.acks && ak.acks.length ? '<p class="note" style="margin-top:10px">Acknowledged:</p><div>' + ak.acks.map(function (a) { return '<span class="pchip" style="background:#E3F7EF">' + esc(a.name) + ' · ' + esc(a.at) + '</span>'; }).join('') + '</div>' : '') + '</div>'; }
   if (e.key === 'quotes') body += cmpTable(r);
-  var plain = e.fields.filter(function (f) { return !f.sec && f.t !== 'files' && f.t !== 'hidden' && f.k !== 'acks' && r[f.k] !== '' && r[f.k] != null && !(e.key === 'quotes' && /^(tot\d|vendor\d|off\d|fr\d|l1Col)$/.test(f.k)); });
-  var secF = e.fields.filter(function (f) { return f.sec && r[f.k] !== '' && r[f.k] != null; });
-  body += '<div class="sec"><div class="kv">' + plain.map(function (f) { return '<div class="' + (f.t === 'textarea' ? 'wide' : '') + '"><span>' + esc(f.l) + '</span><b>' + fval(f, r[f.k]) + '</b></div>'; }).join('') + '</div></div>';
+  var plain = e.fields.filter(function (f) { return !f.sec && f.t !== 'files' && f.t !== 'hidden' && f.k !== 'acks' && r[f.k] !== '' && r[f.k] != null && !(e.key === 'quotes' && /^(tot\d|vendor\d|off\d|fr\d|l1Col)$/.test(f.k)) && !(e.key === 'quotes' && /^vrm\d$/.test(f.k) && !fxStrip(r[f.k])); });
+  var secF = e.fields.filter(function (f) { return f.sec && r[f.k] !== '' && r[f.k] != null && !(e.key === 'quotes' && /^vrm\d$/.test(f.k) && !fxStrip(r[f.k])); });
+  body += '<div class="sec"><div class="kv">' + plain.map(function (f) { return '<div class="' + (f.t === 'textarea' ? 'wide' : '') + '"><span>' + esc(f.l) + '</span><b>' + fval(f, e.key === 'quotes' && /^vrm\d$/.test(f.k) ? fxStrip(r[f.k]) : r[f.k]) + '</b></div>'; }).join('') + '</div></div>';
   if (e.lines && (r.lines || []).length && e.key !== 'quotes') {
     var cols = e.lines.cols.filter(function (c) { return c.t !== 'hidden'; });
     body += '<div class="sec"><h4>' + esc(e.lines.l) + '</h4><div style="overflow:auto"><table class="tb"><thead><tr><th>#</th>' + cols.map(function (c) { return '<th class="' + (c.t === 'text' || c.t === 'ref' || c.t === 'select' ? '' : 'num') + '">' + esc(c.l) + '</th>'; }).join('') + '</tr></thead><tbody>' +
       r.lines.map(function (l, i) { return '<tr><td>' + (i + 1) + '</td>' + cols.map(function (c) { var n = !(c.t === 'text' || c.t === 'ref' || c.t === 'select'); return '<td class="' + (n ? 'num' : '') + '" style="max-width:none;white-space:normal">' + fval(c, l[c.k]) + (c.k === 'item' && l.desc && !cols.some(function (z) { return z.k === 'desc'; }) ? '<div class="note">' + esc(l.desc) + '</div>' : '') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>' +
       (e.key === 'po' ? '<div class="totals" style="margin-top:12px"><div><span>Subtotal</span><b>' + inr(r.subtotal) + '</b></div><div><span>GST</span><b>' + inr(r.gstAmount) + '</b></div>' + (num(r.freight) ? '<div><span>Freight</span><b>' + inr(r.freight) + '</b></div>' : '') + (num(r.otherCharges) ? '<div><span>Other charges</span><b>' + inr(r.otherCharges) + '</b></div>' : '') + '<div><span>Grand total</span><span>' + inr(r.total) + '</span></div></div>' : '') + '</div>';
   }
-  if (secF.length) body += '<div class="sec"><h4>' + esc(secF[0].sec) + '</h4><div class="kv">' + secF.map(function (f) { return '<div class="wide"><span>' + esc(f.l) + '</span><b style="font-weight:500">' + fval(f, r[f.k]) + '</b></div>'; }).join('') + '</div></div>';
+  if (secF.length) body += '<div class="sec"><h4>' + esc(secF[0].sec) + '</h4><div class="kv">' + secF.map(function (f) { return '<div class="wide"><span>' + esc(f.l) + '</span><b style="font-weight:500">' + fval(f, e.key === 'quotes' && /^vrm\d$/.test(f.k) ? fxStrip(r[f.k]) : r[f.k]) + '</b></div>'; }).join('') + '</div></div>';
   e.fields.filter(function (f) { return f.t === 'files' && (r[f.k] || []).length; }).forEach(function (f) {
     body += '<div class="sec"><h4>' + esc(f.l) + '</h4><div class="files">' + r[f.k].map(function (u) { return '<a class="fth" href="' + esc(u) + '" target="_blank" rel="noopener"><span>PDF</span><img loading="lazy" src="' + thumb(u, 240) + '" alt="" onerror="this.remove()"></a>'; }).join('') + '</div></div>';
   });
@@ -1181,13 +1181,103 @@ function secSub(sl, vs, name, lead, pr) {
 function offTag(r, n) { return r['off' + n] ? String(r['off' + n]) : ''; }
 /* ---- Comparative statement (Port Energy Excel format): Received Rate + Negotiated Rate blocks per vendor ---- */
 var CMP_LAST = null;
+
+/* ---- Foreign-currency quotations (Nov 2026): vendor quotes in USD/EUR/CNY etc., app converts to INR. ----
+   Rates saved on the quotation are always INR (so totals, L1 and PO work as before).
+   Currency + exchange rate + date are frozen in the vendor remarks as a hidden tag [[FX:cur|rate|date|margin|market]]. */
+var FX_CUR = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'CNY', 'SGD', 'SAR', 'JPY', 'KRW', 'AUD', 'CAD', 'MYR', 'THB', 'QAR', 'KWD', 'OMR', 'BHD', 'CHF', 'HKD', 'ZAR', 'IDR', 'VND', 'TRY'];
+var FX_TAG = /\s*\[\[FX:([A-Z]{3})\|([\d.]+)\|([\d-]*)\|([\d.]*)\|([\d.]*)\]\]\s*/;
+var FX_CACHE = {};
+function r4(n) { return Math.round((Number(n) + Number.EPSILON) * 10000) / 10000; }
+function fxParse(r, n) { var m = FX_TAG.exec(String(r['vrm' + n] || '')); if (!m || m[1] === 'INR') return null; return { cur: m[1], rate: +m[2], date: m[3], margin: +m[4] || 0, market: +m[5] || +m[2] }; }
+function fxStrip(t) { return String(t == null ? '' : t).replace(FX_TAG, '').trim(); }
+function fxTag(x) { return '[[FX:' + x.cur + '|' + r4(fxRateOf(x)).toFixed(4) + '|' + (x.date || '') + '|' + (+x.margin || 0) + '|' + r4(x.market).toFixed(4) + ']]'; }
+function fxRateOf(x) { return x && +x.market > 0 ? r4(+x.market * (1 + (+x.margin || 0) / 100)) : 0; }
+function fxIsF(n) { return !!(F && F.fx && F.fx[n] && F.fx[n].cur !== 'INR'); }
+function fxRate(n) { return fxIsF(n) ? fxRateOf(F.fx[n]) : 1; }
+function fxNote(r, n) { var x = fxParse(r, n); return x ? 'Quoted in ' + x.cur + '. Converted to INR at ' + x.rate.toFixed(4) + ' per ' + x.cur + (x.margin ? ' (incl. bank margin ' + x.margin + '%)' : '') + (x.date ? ' on ' + ddot(x.date) : '') + '. GST not applicable (import).' : ''; }
+function fxNum(v) { return v !== '' && v != null && !isNaN(+v) && +v > 0; }
+function fxLoad() {
+  F.fx = {}; if (F.key !== 'quotes' || F.isNew) return;
+  [1, 2, 3, 4].forEach(function (n) {
+    var x = fxParse(F.rec, n); if (!x) return; F.fx[n] = x; F.rec['vrm' + n] = fxStrip(F.rec['vrm' + n]);
+    ['fr', 'tp', 'ntp'].forEach(function (q) { if (fxNum(F.rec[q + n])) F.rec[q + n] = r4(+F.rec[q + n] / x.rate); });
+    F.lines.forEach(function (l) { ['r', 'n'].forEach(function (q) { if (fxNum(l[q + n])) l[q + n] = r4(+l[q + n] / x.rate); }); });
+  });
+}
+function fxApply(d) {
+  d.lines = JSON.parse(JSON.stringify(F.lines));
+  for (var n = 1; n <= 4; n++) {
+    var base = fxStrip(d['vrm' + n]), x = F.fx && F.fx[n];
+    if (d['vrm' + n] !== undefined || (x && x.cur !== 'INR')) d['vrm' + n] = base;
+    if (!d['vendor' + n] || !x || x.cur === 'INR') continue;
+    var k = fxRateOf(x); if (!(k > 0)) return 'Enter the exchange rate for vendor V' + n + ' (' + x.cur + ').';
+    ['fr', 'tp', 'ntp'].forEach(function (q) { if (fxNum(d[q + n])) d[q + n] = r4(+d[q + n] * k); });
+    d.lines.forEach(function (l) { ['r', 'n'].forEach(function (q) { if (fxNum(l[q + n])) l[q + n] = r4(+l[q + n] * k); }); });
+    d['vrm' + n] = (base ? base + '\n' : '') + fxTag(x);
+  }
+  return '';
+}
+function fxFetch(cur) {
+  if (FX_CACHE[cur] && Date.now() - FX_CACHE[cur].t < 3600000) return Promise.resolve(FX_CACHE[cur].v);
+  var tries = ['https://open.er-api.com/v6/latest/' + cur, 'https://api.frankfurter.app/latest?from=' + cur + '&to=INR'];
+  var go = function (i) {
+    if (i >= tries.length) return Promise.reject(new Error('no rate'));
+    return fetch(tries[i]).then(function (r) { return r.json(); }).then(function (j) { var v = +(j && j.rates && j.rates.INR); if (!(v > 0)) throw 0; FX_CACHE[cur] = { v: r4(v), t: Date.now() }; return r4(v); }).catch(function () { return go(i + 1); });
+  };
+  return go(0);
+}
+function fxLive(n) {
+  var x = F && F.fx && F.fx[n]; if (!x) return; var cur = x.cur;
+  var st = document.querySelector('[data-fxs="' + n + '"]'); if (st) st.textContent = 'Getting live rate...';
+  fxFetch(cur).then(function (v) {
+    if (!F || !F.fx || !F.fx[n] || F.fx[n].cur !== cur) return;
+    F.fx[n].market = v; F.fx[n].date = new Date().toISOString().slice(0, 10); fxPanel(); renderLines(); calcPreview();
+  }).catch(function () { var s2 = document.querySelector('[data-fxs="' + n + '"]'); if (s2) s2.textContent = 'Live rate not available now. Please type the rate.'; });
+}
+function fxPanel() {
+  if (!F || F.key !== 'quotes' || !$('ln')) return;
+  var w = $('ln').parentNode, p = $('fxp'); if (!p) { w.insertAdjacentHTML('beforebegin', '<div id="fxp"></div>'); p = $('fxp'); }
+  F.fx = F.fx || {};
+  var vs = [1, 2, 3, 4].filter(function (n) { return F.rec['vendor' + n]; });
+  p.innerHTML = !vs.length ? '' : '<div class="note" style="margin:0 0 6px"><b>Vendor currency.</b> For a foreign vendor, choose the currency and type the rates in that currency. INR is calculated automatically. GST is not added for foreign vendors.</div>' + vs.map(function (n) {
+    var x = F.fx[n], cur = x ? x.cur : 'INR';
+    return '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 6px;padding:8px 10px;background:#F6F8FC;border-radius:8px"><b style="min-width:150px">V' + n + ' · ' + esc(String(F.rec['vendor' + n]).slice(0, 24)) + '</b>' +
+      '<select class="in" data-fxc="' + n + '" style="width:auto;min-width:96px">' + FX_CUR.map(function (c) { return '<option' + (c === cur ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select>' +
+      (x && cur !== 'INR' ? '<span class="note">1 ' + cur + ' = ₹</span><input class="in" data-fxr="' + n + '" inputmode="decimal" style="width:100px" value="' + esc(x.market || '') + '"><span class="note">Bank margin %</span><input class="in" data-fxm="' + n + '" inputmode="decimal" style="width:64px" value="' + esc(x.margin || 0) + '"><b data-fxu="' + n + '">Rate used ₹' + fxRateOf(x).toFixed(4) + '</b><button class="btn soft sm" type="button" data-fxf="' + n + '">Live rate</button><span class="note" data-fxs="' + n + '">' + (x.date ? 'Rate date ' + esc(ddot(x.date)) : '') + '</span>' : '') + '</div>';
+  }).join('');
+  p.querySelectorAll('[data-fxc]').forEach(function (el) {
+    el.onchange = function () {
+      var n = +el.dataset.fxc, c = el.value;
+      if (c === 'INR') delete F.fx[n]; else F.fx[n] = { cur: c, market: (FX_CACHE[c] && FX_CACHE[c].v) || '', margin: 0, date: new Date().toISOString().slice(0, 10) };
+      fxPanel(); renderLines(); calcPreview(); if (c !== 'INR') fxLive(n);
+    };
+  });
+  var upd = function (n) { var x = F.fx[n], u = p.querySelector('[data-fxu="' + n + '"]'); x.date = new Date().toISOString().slice(0, 10); if (u) u.textContent = 'Rate used ₹' + fxRateOf(x).toFixed(4); calcPreview(); };
+  p.querySelectorAll('[data-fxr]').forEach(function (el) { el.oninput = function () { var n = +el.dataset.fxr; F.fx[n].market = el.value === '' ? '' : r4(parseFloat(el.value) || 0); upd(n); }; });
+  p.querySelectorAll('[data-fxm]').forEach(function (el) { el.oninput = function () { var n = +el.dataset.fxm; F.fx[n].margin = Math.max(0, parseFloat(el.value) || 0); upd(n); }; });
+  p.querySelectorAll('[data-fxf]').forEach(function (el) { el.onclick = function () { fxLive(+el.dataset.fxf); }; });
+}
+/* saved comparison: recompute L1 / saving when a foreign vendor is involved (GST excluded for them) */
+function cmpFix(r) {
+  if (!r || !r.lines) return r;
+  var vs = [1, 2, 3, 4].filter(function (n) { return r['vendor' + n]; });
+  if (!vs.some(function (n) { return fxParse(r, n); })) return r;
+  var lines = r.lines, qSum = lines.reduce(function (t, l) { return t + num(l.qty); }, 0);
+  var hasN = vs.some(function (n) { return lines.some(function (l) { return num(l['n' + n]) > 0; }) || num(r['ntp' + n]) > 0; });
+  var arr = vs.map(function (n) { return { n: n, c: cmpCalc(r, n, hasN ? 'n' : 'r', lines, qSum) }; }).filter(function (x) { return !x.c.inc && x.c.net > 0; }).sort(function (a, b) { return a.c.net - b.c.net; });
+  var o = {}; Object.keys(r).forEach(function (k) { o[k] = r[k]; });
+  if (arr.length) { o.l1Col = String(arr[0].n); o.l1Vendor = r['vendor' + arr[0].n]; o.l1Total = r2(arr[0].c.net); o.saving = arr[1] ? r2(arr[1].c.net - arr[0].c.net) : 0; }
+  return o;
+}
+
 function f2(n) { return num(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function cmpCalc(r, n, b, lines, qSum) {
-  var o = { rates: [], amts: [], chg: [], sub: 0, gst: 0, inc: false };
+  var o = { rates: [], amts: [], chg: [], sub: 0, gst: 0, inc: false }, fxp = fxParse(r, n);
   lines.forEach(function (l) {
     var neg = b === 'n' && num(l['n' + n]) > 0, rt = neg ? num(l['n' + n]) : num(l['r' + n]);
     if (!(rt > 0)) { o.inc = true; o.rates.push(null); o.amts.push(null); o.chg.push(false); return; }
-    var a = num(l.qty) * rt; o.sub += a; o.gst += a * num(l.gst) / 100; o.rates.push(rt); o.amts.push(a); o.chg.push(neg);
+    var a = num(l.qty) * rt; o.sub += a; o.gst += fxp ? 0 : a * num(l.gst) / 100; o.rates.push(rt); o.amts.push(a); o.chg.push(neg);
   });
   o.trate = b === 'n' ? (num(r['ntp' + n]) > 0 ? num(r['ntp' + n]) : num(r['tp' + n])) : num(r['tp' + n]);
   o.tamt = o.trate > 0 ? o.trate * qSum : num(r['fr' + n]);
@@ -1217,7 +1307,7 @@ function cmpStmtHtml(r, mode) {
   var one = function (t, c, n) { return td(t, (c || '') + (win(n) ? ' l1c' : ''), 2); };
   var gstTxt = (function () { var s = {}; lines.forEach(function (l) { s[num(l.gst)] = 1; }); var k = Object.keys(s); return k.length === 1 ? ' (' + k[0] + '%)' : ''; })();
   var foot = row('SUB-TOTAL', function (c, n) { return one(f2(c.sub), 'r num b', n); }, 'tt') +
-    row('GST' + gstTxt, function (c, n) { return one(f2(c.gst), 'r num', n); }) +
+    row('GST' + gstTxt, function (c, n) { return one(fxParse(r, n) ? '-' : f2(c.gst), 'r num', n); }) +
     row('Transportation Charges Per MT', function (c, n) { return one(c.trate > 0 ? f2(c.trate) : '-', 'r num', n); }) +
     row('Transportation Charges (Total)', function (c, n) { return one(f2(c.tamt), 'r num', n); }) +
     row('NET AMOUNT', function (c, n) { return one(f2(c.net) + (c.inc ? ' *' : ''), 'r num b', n); }, 'tt net') +
@@ -1225,19 +1315,21 @@ function cmpStmtHtml(r, mode) {
     row('Bag Capacity', function (c, n) { return one(esc(r['bag' + n] || '-'), 'ct', n); }) +
     row('Payment Terms', function (c, n) { return one(esc(r['pay' + n] || '-'), 'ct', n); }) +
     row('Delivery Period', function (c, n) { return one(esc(r['dly' + n] || '-'), 'ct', n); });
-  var fin = vs.map(function (n) { return { n: n, t: num(r['tot' + n]) }; }).filter(function (x) { return x.t > 0; }).sort(function (a, b) { return a.t - b.t; });
+  var anyFx = vs.some(function (n) { return fxParse(r, n); }), lb = blocks[blocks.length - 1];
+  var fin = vs.map(function (n) { return { n: n, t: anyFx ? (C[lb + n].inc ? 0 : C[lb + n].net) : num(r['tot' + n]) }; }).filter(function (x) { return x.t > 0; }).sort(function (a, b) { return a.t - b.t; });
   foot += '<tr class="b">' + lab('RANK (final price)') + blocks.map(function (b, bi) { return vs.map(function (n) { var k = fin.map(function (x) { return x.n; }).indexOf(n); return one(bi === blocks.length - 1 ? (k > -1 ? 'L' + (k + 1) : '-') : '', 'ct b', n); }).join(''); }).join('') + '</tr>';
-  var rem = vs.filter(function (n) { return r['vrm' + n]; }).map(function (n) { return '<p class="rm"><b>' + esc(r['vendor' + n]) + ':</b> ' + nl(r['vrm' + n]) + '</p>'; }).join('');
+  var rem = vs.filter(function (n) { return fxStrip(r['vrm' + n]) || fxParse(r, n); }).map(function (n) { var tx = fxStrip(r['vrm' + n]), fn = fxNote(r, n); return '<p class="rm"><b>' + esc(r['vendor' + n]) + ':</b> ' + (tx ? nl(tx) : '') + (tx && fn ? '<br>' : '') + esc(fn) + '</p>'; }).join('');
   return { html: '<table class="' + (mode === 'print' ? 't' : mode === 'xls' ? 'x' : 'tb cmp') + ' cmps">' + h + '<tbody>' + body + foot + '</tbody></table>', rem: rem, hasN: hasN, qSum: qSum };
 }
 function cmpTable(r) {
-  CMP_LAST = r;
+  r = cmpFix(r); CMP_LAST = r;
   var l1o = r.l1Col ? offTag(r, r.l1Col) : '', g = cmpStmtHtml(r, 'screen'); if (!g) return '';
   return '<div class="sec"><h4>Comparative statement ' + (r.l1Vendor ? '<span class="badge b-ok">L1: ' + esc(r.l1Vendor) + (l1o ? ' (' + esc(l1o) + ')' : '') + ' · ' + inr(r.l1Total) + '</span>' : '') + (num(r.saving) ? '<span class="badge b-info">Saves ' + inr(r.saving) + ' vs L2</span>' : '') +
     '<button class="btn soft sm" style="margin-left:auto" data-cmpxls type="button">' + icon('download', 14) + 'Excel</button></h4><div style="overflow:auto">' + g.html + '</div>' + (g.rem ? '<div class="cmp-rem"><p class="note"><b>Vendor remarks</b></p>' + g.rem + '</div>' : '') +
     '<p class="note" style="margin-top:8px">NQ = not quoted. * = vendor did not quote every item. ' + (g.hasN ? 'Negotiated block uses the negotiated rate where entered, otherwise the received rate. ' : '') + 'Highlighted column = L1 (lowest final amount among vendors who quoted every item).</p></div>';
 }
 function cmpXls(r) {
+  r = cmpFix(r);
   var g = cmpStmtHtml(r, 'xls'); if (!g) return;
   var css = 'body{font-family:Calibri,Arial;font-size:11pt}table.x{border-collapse:collapse}table.x td,table.x th{border:1px solid #444;padding:3px 6px;vertical-align:middle}th{background:#1F3864;color:#fff;text-align:center}th.sh{background:#D9E2F3;color:#000}th.vn{background:#FFF2CC;color:#000}th.l1{background:#C6EFCE;color:#006100}td.l1c{background:#E2F5E8}td.b,tr.tt td{font-weight:bold}tr.net td{background:#FCE4D6;font-weight:bold}td.ct{text-align:center}td.r{text-align:right}td.lb{font-weight:bold;background:#F2F2F2}tr.sech td{background:#EEF2F7;font-weight:bold}td.chg{color:#C00000;font-weight:bold}.sm{font-size:8pt}';
   var doc = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><style>' + css + '</style></head><body>' +
@@ -1323,6 +1415,7 @@ function openForm(key, rec, preset) {
   if (preset) Object.keys(preset).forEach(function (k) { if (k !== 'lines' && k !== '_copied' && k in r) r[k] = preset[k]; });
   F = { key: key, e: e, isNew: isNew, id: rec ? rec.id : null, rec: r, lines: e.lines ? JSON.parse(JSON.stringify((preset && preset.lines) || (rec && rec.lines) || [])) : null, active: 0 };
   if (e.lines && !F.lines.length && !e.lines.fixed) F.lines.push(blankLine(e));
+  fxLoad();
   var canSubmit = isNew && (key === 'po' || key === 'pr'), canPost = isNew && key === 'grn', hasAssist = !!ASSIST[key];
   var secName = (e.fields.filter(function (f) { return f.sec; })[0] || {}).sec;
   openDrawer('<div class="dh"><div><h2>' + (isNew ? 'New ' : 'Edit ') + esc(e.single.toLowerCase()) + (TCODE[key] && isNew ? ' <span class="badge b-mute">' + ({ po: 'ME21N', pr: 'ME51N', quotes: 'ME47', grn: 'MIGO', bills: 'MIRO', payments: 'F-53' }[key] || '') + '</span>' : '') + '</h2><div class="sub">' + (isNew ? esc(e.title) : esc(F.id)) + (preset && preset._copied ? ' · copied from ' + esc(preset._copied) : '') + '</div></div>' +
@@ -1572,9 +1665,10 @@ function renderLines() {
   if (!F.lines || !$('ln')) return;
   var e = F.e, fixed = e.lines.fixed, key = F.key;
   var cols = e.lines.cols.filter(function (c) { return c.t !== 'hidden'; });
+  if (key === 'quotes') fxPanel();
   if (key === 'quotes') cols = cols.filter(function (c) { var m = /^r(\d)$/.exec(c.k); return !m || F.rec['vendor' + m[1]]; });
   if (!F.lines.length) { $('ln').innerHTML = '<tr><td class="note" style="padding:14px">' + (key === 'grn' ? 'Select a PO to load its pending items.' : 'No lines.') + '</td></tr>'; return; }
-  var label = function (c) { var m = /^r(\d)$/.exec(c.k); return m && key === 'quotes' ? esc(String(F.rec['vendor' + m[1]]).slice(0, 18) + (F.rec['off' + m[1]] ? ' · ' + String(F.rec['off' + m[1]]).slice(0, 10) : '')) : esc(c.l); };
+  var label = function (c) { var m = /^r(\d)$/.exec(c.k); return m && key === 'quotes' ? esc(String(F.rec['vendor' + m[1]]).slice(0, 18) + (F.rec['off' + m[1]] ? ' · ' + String(F.rec['off' + m[1]]).slice(0, 10) : '')) + (fxIsF(m[1]) ? ' <small>(' + F.fx[m[1]].cur + ')</small>' : '') : esc(c.l); };
   $('ln').innerHTML = '<thead><tr><th>#</th>' + cols.map(function (c) { return '<th>' + label(c) + (c.req ? ' <span class="req">*</span>' : '') + '</th>'; }).join('') + (fixed ? '' : '<th></th>') + '</tr></thead><tbody>' +
     F.lines.map(function (l, i) {
       return '<tr data-i="' + i + '"><td class="n">' + (i + 1) + '</td>' + cols.map(function (c) {
@@ -1655,9 +1749,9 @@ function calcPreview() {
     if (tot > S.sess.config.poLimit) rows.splice(3, 0, ['Approval', 'Dept Head + MD (above ' + inrShort(S.sess.config.poLimit) + ')']);
   }
   if (k === 'quotes') {
-    var tots = [1, 2, 3, 4].map(function (n) { if (!r['vendor' + n]) return null; var b = 0, g = 0, full = true; F.lines.forEach(function (l) { var v = l['r' + n]; if (v === '' || v == null || !(num(v) > 0)) full = false; else { var am = num(l.qty) * num(v); b += am; g += am * num(l.gst) / 100; } }); var fr = num(r['fr' + n]); return { n: n, v: r['vendor' + n] + (r['off' + n] ? ' (' + r['off' + n] + ')' : ''), f: r2(fr), t: r2(b + g + fr), full: full }; }).filter(Boolean);
+    var tots = [1, 2, 3, 4].map(function (n) { if (!r['vendor' + n]) return null; var b = 0, g = 0, full = true, fxf = fxIsF(n), kk = fxRate(n); F.lines.forEach(function (l) { var v = l['r' + n]; if (v === '' || v == null || !(num(v) > 0)) full = false; else { var am = num(l.qty) * num(v); b += am; g += fxf ? 0 : am * num(l.gst) / 100; } }); var fr = num(r['fr' + n]); return { n: n, v: r['vendor' + n] + (r['off' + n] ? ' (' + r['off' + n] + ')' : '') + (fxf ? ' [' + F.fx[n].cur + ']' : ''), f: r2(fr * kk), t: r2((b + g + fr) * kk), full: full, fx: fxf ? F.fx[n] : null, ft: r2(b + g + fr) }; }).filter(Boolean);
     var ok = tots.filter(function (x) { return x.full && x.t > 0; }).sort(function (a, b) { return a.t - b.t; });
-    rows = []; tots.forEach(function (x) { rows.push([x.v + (ok[0] && ok[0].n === x.n ? '  ★ L1' : '') + (x.full ? '' : '  (incomplete)'), inr(x.t)]); if (x.f) rows.push(['    of which freight / P&F', inr(x.f)]); });
+    rows = []; tots.forEach(function (x) { rows.push([x.v + (ok[0] && ok[0].n === x.n ? '  ★ L1' : '') + (x.full ? '' : '  (incomplete)'), inr(x.t)]); if (x.fx) rows.push(['    ' + x.fx.cur + ' ' + f2(x.ft) + ' @ ₹' + fxRateOf(x.fx).toFixed(4) + ' (no GST)', x.fx.cur + ' ' + f2(x.ft)]); if (x.f) rows.push(['    of which freight / P&F', inr(x.f)]); });
     if (ok.length > 1) rows.push(['Saving vs L2', inr(ok[1].t - ok[0].t)]);
   }
   if (k === 'bills') { var t2 = r2(num(r.taxable) + num(r.cgst) + num(r.sgst) + num(r.igst)); var tds = num(r.tdsPct) > 0 ? r2(num(r.taxable) * num(r.tdsPct) / 100) : num(r.tds); rows = [['Invoice total', inr(t2)], ['TDS', inr(tds)], ['Net payable', inr(t2 - tds)]]; }
@@ -1668,7 +1762,7 @@ function calcPreview() {
   if (k === 'vehicles' && r.endKm !== '' && r.startKm !== '') rows = [['Distance', r2(num(r.endKm) - num(r.startKm)) + ' km']];
   box.style.display = rows.length ? '' : 'none';
   box.innerHTML = '<div class="totals" style="max-width:none">' + rows.map(function (x) { return '<div><span>' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div>'; }).join('') + '</div>';
-  if (k === 'quotes' && $('ln')) $('ln').querySelectorAll('tbody tr').forEach(function (tr) { var l = F.lines[+tr.dataset.i]; var b = -1, br = Infinity; [1, 2, 3, 4].forEach(function (n) { var v = l['r' + n]; if (r['vendor' + n] && v !== '' && v != null && num(v) > 0 && num(v) < br) { br = num(v); b = n; } }); tr.querySelectorAll('[data-c]').forEach(function (el) { var m = /^r(\d)$/.exec(el.dataset.c); if (m) el.parentElement.classList.toggle('best', +m[1] === b); }); });
+  if (k === 'quotes' && $('ln')) $('ln').querySelectorAll('tbody tr').forEach(function (tr) { var l = F.lines[+tr.dataset.i]; var b = -1, br = Infinity; [1, 2, 3, 4].forEach(function (n) { var v = l['r' + n]; if (r['vendor' + n] && v !== '' && v != null && num(v) > 0 && num(v) * fxRate(n) < br) { br = num(v) * fxRate(n); b = n; } }); tr.querySelectorAll('[data-c]').forEach(function (el) { var m = /^r(\d)$/.exec(el.dataset.c); if (m) el.parentElement.classList.toggle('best', +m[1] === b); }); });
 }
 
 /* ---------------- assist panel ---------------- */
@@ -1794,6 +1888,7 @@ function saveForm(btn, then) {
   var data = {}; Object.keys(r).forEach(function (k) { data[k] = r[k]; });
   if (!F.isNew) data.id = F.id;
   if (e.lines) data.lines = F.lines;
+  if (e.key === 'quotes') { var fxe = fxApply(data); if (fxe) { toast(fxe, true); return; } }
   busy(btn, true, 'Saving');
   var other = $('fSubmit') && btn !== $('fSubmit') ? $('fSubmit') : $('fSave'); if (other) other.disabled = true;
   var key = F.key;
@@ -2098,7 +2193,7 @@ function printPO(r, x) {
   printHtml(body, { title: no });
 }
 function printQuotes(r, x) {
-  x = x || {};
+  x = x || {}; r = cmpFix(r);
   var g = cmpStmtHtml(r, 'print'); if (!g) return;
   var body = '<p class="ct b" style="font-size:14pt;margin:0">PORT ENERGY PRIVATE LIMITED</p><p class="ct b u" style="font-size:12pt;margin:1mm 0 3mm">Comparative Statement for ' + esc(r.subject || '') + '</p><table style="width:100%;margin:2mm 0 3mm"><tr><td class="b">No: ' + esc(r.id) + '</td><td class="b ct">Project: ' + esc(r.project || '-') + (r.prRef ? ' · PR: ' + esc(r.prRef) : '') + '</td><td class="b r">Date: ' + ddot(r.date) + '</td></tr></table>' +
     '<style>table.cmps{font-size:7.5pt;width:100%}table.cmps th,table.cmps td{padding:1.2mm 1mm}table.cmps th.l1{background:#d8f0dc}table.cmps td.l1c{background:#eaf7ec}table.cmps td.lb{font-weight:bold;background:#f1f1f1}table.cmps tr.net td{background:#fde9d9;font-weight:bold}table.cmps td.chg{font-weight:bold}table.cmps .sm{font-weight:normal;font-size:6.5pt}table.cmps td.it{text-align:left}</style>' + g.html +
