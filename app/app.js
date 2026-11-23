@@ -898,6 +898,13 @@ function list(v, key, presetStatus) {
     if (so) { var f = colDef(e, so.k), n = f.t === 'money' || f.t === 'number' || f.t === 'auto'; rows = rows.slice().sort(function (a, b) { var x = a[so.k], y = b[so.k]; if (n) { x = num(x); y = num(y); } else { x = String(x || '').toLowerCase(); y = String(y || '').toLowerCase(); } return (x < y ? -1 : x > y ? 1 : 0) * so.d; }); }
     return rows;
   }
+  function pcTot(rows) { var i = 0, o = 0; rows.forEach(function (r) { var a = num(r.amount); if (r.type === 'Cash In') i += a; else if (r.type === 'Cash Out') o += a; }); return { i: i, o: o, b: i - o }; }
+  function pcBar(rows) {
+    if (key !== 'pettycash') return '';
+    var t = pcTot(rows), neg = t.b < 0;
+    var c = function (l, v, col) { return '<div style="flex:1;min-width:150px;background:#fff;border-radius:14px;padding:12px 16px;box-shadow:0 2px 10px rgba(30,60,120,.08)"><div class="note" style="margin:0">' + l + '</div><b style="font-size:20px;color:' + col + '">' + inr(v) + '</b></div>'; };
+    return '<div style="display:flex;gap:12px;flex-wrap:wrap;padding:0 0 14px">' + c('Total Cash In', t.i, '#0A8A4A') + c('Total Cash Out', t.o, '#D14343') + c('Balance', t.b, neg ? '#D14343' : '#1D4ED8') + '</div>';
+  }
   function draw() {
     var all = S.cache[key] || [];
     if (e.flow) {
@@ -916,15 +923,19 @@ function list(v, key, presetStatus) {
       Object.keys(sums).forEach(function (k) { sums[k] += num(r[k]); });
       return '<tr class="click" data-id="' + esc(r.id) + '" style="animation-delay:' + Math.min(i, 20) * 18 + 'ms">' + cols.map(function (c) { var n = c.t === 'money' || c.t === 'number' || c.t === 'auto'; return '<td class="' + (n ? 'num' : '') + '">' + fval(c, r[c.k]) + (c.k === 'status' ? statusExtra(e, r) : '') + '</td>'; }).join('') + '</tr>';
     }).join('');
-    var foot = Object.keys(sums).length ? '<tfoot><tr>' + cols.map(function (c, i) { return '<td class="num">' + (sums[c.k] != null ? inr(sums[c.k]) : (i === 0 ? rows.length + ' rows' : '')) + '</td>'; }).join('') + '</tr></tfoot>' : '';
-    $('tbl').innerHTML = '<div class="tablewrap"><table class="tb"><thead><tr>' + cols.map(function (c) { var n = c.t === 'money' || c.t === 'number' || c.t === 'auto'; return '<th class="' + (n ? 'num' : '') + '" data-sort="' + c.k + '">' + esc(c.l) + (so && so.k === c.k ? (so.d > 0 ? ' ▲' : ' ▼') : '') + '</th>'; }).join('') + '</tr></thead><tbody>' + body + '</tbody>' + foot + '</table></div>' +
+    var foot;
+    if (key === 'pettycash') {
+      var pt = pcTot(rows);
+      foot = '<tfoot>' + [['Total Cash In', pt.i], ['Total Cash Out', pt.o], ['Balance', pt.b]].map(function (x) { return '<tr>' + cols.map(function (c, i) { return '<td class="num">' + (c.k === 'amount' ? inr(x[1]) : (i === 0 ? x[0] : '')) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tfoot>';
+    } else foot = Object.keys(sums).length ? '<tfoot><tr>' + cols.map(function (c, i) { return '<td class="num">' + (sums[c.k] != null ? inr(sums[c.k]) : (i === 0 ? rows.length + ' rows' : '')) + '</td>'; }).join('') + '</tr></tfoot>' : '';
+    $('tbl').innerHTML = pcBar(rows) + '<div class="tablewrap"><table class="tb"><thead><tr>' + cols.map(function (c) { var n = c.t === 'money' || c.t === 'number' || c.t === 'auto'; return '<th class="' + (n ? 'num' : '') + '" data-sort="' + c.k + '">' + esc(c.l) + (so && so.k === c.k ? (so.d > 0 ? ' ▲' : ' ▼') : '') + '</th>'; }).join('') + '</tr></thead><tbody>' + body + '</tbody>' + foot + '</table></div>' +
       (rows.length > 400 || (S.total[key] || 0) > all.length ? '<p class="note" style="padding:8px 16px">Showing ' + Math.min(400, rows.length) + ' of ' + (S.total[key] || rows.length) + '. Use the filter or dates to narrow.</p>' : '');
     $('tbl').querySelectorAll('tr[data-id]').forEach(function (tr) { tr.onclick = function () { openDetail(key, tr.dataset.id); }; });
     $('tbl').querySelectorAll('th[data-sort]').forEach(function (th) { th.onclick = function () { var c = S.sort[key]; S.sort[key] = { k: th.dataset.sort, d: c && c.k === th.dataset.sort ? -c.d : 1 }; draw(); }; });
   }
   function cards(rows) {
     var cols = e.list.map(function (k) { return colDef(e, k); });
-    $('tbl').innerHTML = '<div class="rcg">' + rows.slice(0, 300).map(function (r, i) { return recCard(e, r, i, cols); }).join('') + '</div>' +
+    $('tbl').innerHTML = pcBar(rows) + '<div class="rcg">' + rows.slice(0, 300).map(function (r, i) { return recCard(e, r, i, cols); }).join('') + '</div>' +
       (rows.length > 300 ? '<p class="note" style="padding:8px 16px">Showing 300 of ' + rows.length + '. Use search or dates to narrow.</p>' : '');
     $('tbl').querySelectorAll('.rc[data-id]').forEach(function (c) { c.onclick = function () { openDetail(key, c.dataset.id); }; });
   }
